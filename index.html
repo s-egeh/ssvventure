@@ -1,0 +1,1094 @@
+﻿<!DOCTYPE html>
+<html lang="en" style="scroll-behavior: smooth;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSV Ventures - Global Trade and Logistics</title>
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* Custom styles for footer and other sections */
+.footer-bg {
+background-color: #0B1B3A; /* Dark blue background */
+position: relative;
+padding-top: 3rem; /* Adjust as needed */
+padding-bottom: 3rem; /* Adjust as needed */
+/* The background image is now applied to the overlay for better control */
+background-image: url('your-map-background.png'); /* Ensure you have this image */
+background-size: cover;
+background-position: center;
+}
+.footer-overlay {
+position: absolute;
+inset: 0;
+/* This overlay darkens the background image to make text readable */
+background-color: rgba(11, 27, 58, 0.85);
+opacity: 1; /* Opacity is now controlled by the RGBA color above */
+z-index: 0;
+}
+.footer-bg .container {
+position: relative;
+z-index: 1;
+}
+.why-us-section {
+background-color: #0B1B3A; /* Consistent dark blue background */
+color: #E2E8F0; /* Light text color */
+}
+.why-us-section .container {
+max-width: 1200px; /* Adjust max-width as needed */
+margin-left: auto;
+margin-right: auto;
+display: grid;
+grid-template-columns: 1fr;
+gap: 2rem;
+align-items: center;
+}
+@media (min-width: 768px) {
+.why-us-section .container {
+grid-template-columns: 1fr 1fr;
+}
+}
+.offer-card {
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(10px);
+border: 1px solid rgba(255, 255, 255, 0.1);
+padding: 2rem;
+border-radius: 1rem;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+transition: all 0.3s ease;
+position: relative;
+overflow: hidden;
+}
+.offer-card::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+height: 3px;
+background: linear-gradient(90deg, #3b82f6, #ff6c46);
+transform: scaleX(0);
+transition: transform 0.3s ease;
+}
+.offer-card:hover::before {
+transform: scaleX(1);
+}
+.offer-card:hover {
+background: rgba(255, 255, 255, 0.08);
+border-color: rgba(59, 130, 246, 0.3);
+transform: translateY(-8px);
+box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+}
+.offer-card h3 {
+color: #CBD5E0; /* Light gray for headings */
+font-weight: bold;
+margin-bottom: 0.5rem;
+}
+.offer-card p {
+color: #A0AEC0; /* Lighter gray for paragraph text */
+}
+.social-icon {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 2.5rem; /* Adjust size as needed */
+height: 2.5rem; /* Adjust size as needed */
+border-radius: 50%;
+background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent white */
+color: white;
+transition: background-color 0.3s ease;
+}
+.social-icon:hover {
+background-color: #3B82F6; /* Blue on hover, like contact button */
+}
+</style>
+</head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<body class="antialiased text-slate-300 bg-slate-900">
+<!-- Scroll Progress Bar -->
+<div id="scroll-progress"></div>
+
+<!-- Logo Header - Fixed Top Left -->
+<div class="fixed top-4 left-4 z-[9998] bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-lg">
+<a href="#home" class="flex items-center gap-2">
+<img src="logo.png" alt="SSV Ventures Logo" class="site-logo h-12 w-auto object-contain" loading="lazy" />
+<div class="hidden sm:block">
+<span class="text-slate-900 font-bold text-sm">SSV Ventures</span>
+<p class="text-xs text-slate-600 italic">"Driven by Expertise, Guided by Trust"</p>
+</div>
+</a>
+</div>
+
+<!-- Floating Navbar -->
+<nav class="floating-navbar">
+<a href="#home" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-house"></i>
+</span>
+<span class="label">Home</span>
+</a>
+<a href="#services" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-briefcase"></i>
+</span>
+<span class="label">Services</span>
+</a>
+<a href="#about-us" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-building"></i>
+</span>
+<span class="label">About Us</span>
+</a>
+<a href="#why-us" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-award"></i>
+</span>
+<span class="label">Why Us</span>
+</a>
+<a href="#vision-mission" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-eye"></i>
+</span>
+<span class="label">Vision</span>
+</a>
+<a href="#team" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-users"></i>
+</span>
+<span class="label">Team</span>
+</a>
+<a href="#contact" class="nav-item">
+<span class="icon">
+<i class="fa-solid fa-envelope"></i>
+</span>
+<span class="label">Contact</span>
+</a>
+</nav>
+
+<!-- Mobile Menu Button -->
+<button id="mobile-menu-button" class="fixed top-4 right-4 z-[9999] lg:hidden bg-white rounded-full p-3 shadow-lg">
+<div class="space-y-1.5">
+<span class="block h-0.5 w-6 rounded-full bg-slate-900 transition-transform duration-300 ease-in-out"></span>
+<span class="block h-0.5 w-6 rounded-full bg-slate-900 transition-opacity duration-300 ease-in-out"></span>
+<span class="block h-0.5 w-6 rounded-full bg-slate-900 transition-transform duration-300 ease-in-out"></span>
+</div>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div id="mobile-menu" class="fixed inset-0 z-[9998] bg-slate-900/95 backdrop-blur-lg hidden lg:hidden">
+<div class="flex flex-col items-center justify-center h-full space-y-8">
+<a href="#home" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-house mr-3"></i>Home
+</a>
+<a href="#services" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-briefcase mr-3"></i>Services
+</a>
+<a href="#about-us" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-building mr-3"></i>About Us
+</a>
+<a href="#why-us" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-award mr-3"></i>Why Us
+</a>
+<a href="#vision-mission" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-eye mr-3"></i>Vision
+</a>
+<a href="#team" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-users mr-3"></i>Team
+</a>
+<a href="#contact" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
+<i class="fa-solid fa-envelope mr-3"></i>Contact
+</a>
+</div>
+</div>
+<main>
+<section id="home" class="px-[3%] py-8 md:py-10 lg:py-12 hero-slider-section">
+<div class="rounded-lg overflow-hidden relative container hero-slider-container">
+<!-- Slider Wrapper -->
+<div class="hero-slider">
+<!-- Slide 1 -->
+<div class="hero-slide active">
+<div class="relative z-10 flex min-h-[25rem] flex-col items-center justify-center p-6 text-center md:min-h-[30rem] md:p-10 lg:min-h-[35rem]">
+<div class="w-full max-w-2xl" data-aos="fade-up">
+<div class="inline-block mb-4 px-4 py-2 bg-blue-500/20 backdrop-blur-sm border border-blue-500/30 rounded-full">
+<span class="text-blue-300 font-semibold text-sm">Global Trade Excellence Since 2013</span>
+</div>
+<h1 class="mb-4 text-4xl font-bold text-white md:mb-5 md:text-5xl lg:text-6xl xl:text-7xl leading-tight">
+Streamlining Your <span class="bg-gradient-to-r from-blue-400 to-orange-400 bg-clip-text text-transparent">Global Trade</span>
+</h1>
+<p class="text-slate-200 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+At SSV Ventures, we connect local businesses with global opportunities through our comprehensive import, export, and transportation services.
+</p>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
+<a href="#contact" class="btn"><span>Get Started</span></a>
+<a href="#services" class="btn-outline"><span>Learn More</span></a>
+</div>
+</div>
+<div class="absolute inset-0 z-0">
+<img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1600&h=900&fit=crop" class="size-full object-cover" alt="Global Trade" loading="lazy" />
+<div class="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-900/70"></div>
+</div>
+</div>
+
+<!-- Slide 2 -->
+<div class="hero-slide">
+<div class="relative z-10 flex min-h-[25rem] flex-col items-center justify-center p-6 text-center md:min-h-[30rem] md:p-10 lg:min-h-[35rem]">
+<div class="w-full max-w-2xl">
+<div class="inline-block mb-4 px-4 py-2 bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full">
+<span class="text-orange-300 font-semibold text-sm">Trusted Logistics Partner</span>
+</div>
+<h1 class="mb-4 text-4xl font-bold text-white md:mb-5 md:text-5xl lg:text-6xl xl:text-7xl leading-tight">
+Excellence in <span class="bg-gradient-to-r from-orange-400 to-blue-400 bg-clip-text text-transparent">Logistics</span>
+</h1>
+<p class="text-slate-200 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+Over a decade of excellence in supply chain management, warehousing, and distribution across Africa and beyond.
+</p>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
+<a href="#about-us" class="btn"><span>Our Story</span></a>
+<a href="#why-us" class="btn-outline"><span>Why Choose Us</span></a>
+</div>
+</div>
+<div class="absolute inset-0 z-0">
+<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1600&h=900&fit=crop" class="size-full object-cover" alt="Logistics Excellence" loading="lazy" />
+<div class="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-900/70"></div>
+</div>
+</div>
+
+<!-- Slide 3 -->
+<div class="hero-slide">
+<div class="relative z-10 flex min-h-[25rem] flex-col items-center justify-center p-6 text-center md:min-h-[30rem] md:p-10 lg:min-h-[35rem]">
+<div class="w-full max-w-2xl">
+<div class="inline-block mb-4 px-4 py-2 bg-purple-500/20 backdrop-blur-sm border border-purple-500/30 rounded-full">
+<span class="text-purple-300 font-semibold text-sm">Industry Specialists</span>
+</div>
+<h1 class="mb-4 text-4xl font-bold text-white md:mb-5 md:text-5xl lg:text-6xl xl:text-7xl leading-tight">
+Beverage <span class="bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">Market Leaders</span>
+</h1>
+<p class="text-slate-200 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+Expert manufacturing representation for alcoholic and non-alcoholic beverage sectors, connecting producers with premium markets worldwide.
+</p>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
+<a href="#specialization" class="btn"><span>Our Expertise</span></a>
+<a href="#services" class="btn-outline"><span>View Services</span></a>
+</div>
+</div>
+<div class="absolute inset-0 z-0">
+<img src="https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=1600&h=900&fit=crop" class="size-full object-cover" alt="Beverage Industry" loading="lazy" />
+<div class="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-900/70"></div>
+</div>
+</div>
+
+<!-- Slide 4 -->
+<div class="hero-slide">
+<div class="relative z-10 flex min-h-[25rem] flex-col items-center justify-center p-6 text-center md:min-h-[30rem] md:p-10 lg:min-h-[35rem]">
+<div class="w-full max-w-2xl">
+<div class="inline-block mb-4 px-4 py-2 bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-full">
+<span class="text-green-300 font-semibold text-sm">Complete Solutions</span>
+</div>
+<h1 class="mb-4 text-4xl font-bold text-white md:mb-5 md:text-5xl lg:text-6xl xl:text-7xl leading-tight">
+End-to-End <span class="bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">Supply Chain</span>
+</h1>
+<p class="text-slate-200 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+From customs clearance to final delivery, we handle every aspect of your logistics needs with precision and care.
+</p>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
+<a href="#contact" class="btn"><span>Request Quote</span></a>
+<a href="#what-we-offer" class="btn-outline"><span>Our Solutions</span></a>
+</div>
+</div>
+<div class="absolute inset-0 z-0">
+<img src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1600&h=900&fit=crop" class="size-full object-cover" alt="Supply Chain" loading="lazy" />
+<div class="absolute inset-0 bg-gradient-to-br from-slate-900/80 to-slate-900/70"></div>
+</div>
+</div>
+</div>
+
+<!-- Slider Controls -->
+<button class="slider-arrow slider-prev" onclick="changeSlide(-1)" aria-label="Previous Slide">
+<i class="fas fa-chevron-left"></i>
+</button>
+<button class="slider-arrow slider-next" onclick="changeSlide(1)" aria-label="Next Slide">
+<i class="fas fa-chevron-right"></i>
+</button>
+
+<!-- Slider Dots -->
+<div class="slider-dots">
+<span class="dot active" onclick="goToSlide(0)"></span>
+<span class="dot" onclick="goToSlide(1)"></span>
+<span class="dot" onclick="goToSlide(2)"></span>
+<span class="dot" onclick="goToSlide(3)"></span>
+</div>
+</div>
+</div>
+</section>
+<section id="why-us" class="px-[3%] py-16 md:py-20 lg:py-24 why-us-section">
+<div class="container" data-aos="fade-up">
+<div class="mb-12 md:mb-16 lg:mb-20">
+<div class="mx-auto max-w-2xl text-center">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Our Advantage</p>
+<h2 class="mb-4 text-3xl font-bold text-white md:mb-5 md:text-4xl lg:text-5xl">
+Why Choose SSV Ventures?
+</h2>
+<p class="text-sm md:text-base text-slate-400">
+Partner with us for unparalleled expertise, reliability, and tailored solutions in global trade and logistics.
+</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-12 items-center">
+<div class="space-y-6">
+<div data-aos="fade-right">
+<h3 class="text-2xl font-bold text-white mb-2">Reliable and Timely Service</h3>
+<p class="text-slate-400">We ensure that all products and services are delivered efficiently and punctually, minimizing delays and maximizing your operational flow.</p>
+</div>
+<div data-aos="fade-right" data-aos-delay="100">
+<h3 class="text-2xl font-bold text-white mb-2">Trusted Partnerships</h3>
+<p class="text-slate-400">We work with industry leaders and have established a network of trusted partners to guarantee the quality and authenticity of our services and represented products.</p>
+</div>
+<div data-aos="fade-right" data-aos-delay="200">
+<h3 class="text-2xl font-bold text-white mb-2">Customer-Centric Approach</h3>
+<p class="text-slate-400">We prioritize the needs of our customers, offering tailored solutions and dedicated support to meet unique business requirements and foster long-term relationships.</p>
+</div>
+</div>
+<div data-aos="fade-left">
+<img src="shipping-container.jpg" alt="Shipping containers and logistics" class="rounded-lg shadow-lg w-full h-auto object-cover"/>
+</div>
+</div>
+</div>
+</section> 
+<section id="what-we-offer" class="px-[3%] py-12 md:py-16 lg:py-20 bg-slate-800/50">
+<div class="container" data-aos="fade-up">
+<div class="mb-10 md:mb-14 lg:mb-16">
+<div class="mx-auto max-w-2xl text-center">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Our Offerings</p>
+<h2 class="mb-4 text-3xl font-bold text-white md:mb-5 md:text-4xl lg:text-5xl">
+What We Bring to Your Business
+</h2>
+<p class="text-sm md:text-base text-slate-400">
+Discover our diverse range of services designed to enhance your global trade and logistics operations.
+</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="0">
+<h3 class="text-lg">Product Distribution</h3>
+<p class="text-sm">Efficiently distribute a wide range of products across various markets, ensuring timely delivery and optimal market penetration.</p>
+</div>
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="100">
+<h3 class="text-lg">Transportation/Haulage Services</h3>
+<p class="text-sm">Reliable and secure transportation solutions for goods, utilizing a robust fleet and experienced personnel for local and international routes.</p>
+</div>
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="200">
+<h3 class="text-lg">Logistics Management</h3>
+<p class="text-sm">End-to-end logistics solutions, from warehousing and inventory management to supply chain optimization, tailored to your specific needs.</p>
+</div>
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="300">
+<h3 class="text-lg">Import & Export Facilitation</h3>
+<p class="text-sm">Streamlined processes for importing and exporting goods, handling customs, documentation, and compliance with ease.</p>
+</div>
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="400">
+<h3 class="text-lg">Manufacturing Representation</h3>
+<p class="text-sm">Act as a strategic representative for manufacturers, connecting them with new markets and fostering successful business relationships.</p>
+</div>
+<div class="offer-card" data-aos="zoom-in" data-aos-delay="500">
+<h3 class="text-lg">Supply Chain Consulting</h3>
+<p class="text-sm">Expert advice and strategies to optimize your supply chain, reduce costs, and improve efficiency across all operations.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="specialization" class="px-[3%] py-12 md:py-16 lg:py-20">
+<div class="container">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+<div data-aos="fade-right">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Our Expertise</p>
+<h2 class="mb-4 text-3xl font-bold text-white md:mb-5 md:text-4xl lg:text-5xl">Specialized Services</h2>
+<p class="text-slate-400 mb-6">We go beyond standard logistics to offer niche services tailored to specific industry needs, ensuring your unique requirements are met with precision and care.</p>
+<div class="space-y-4">
+<div class="offer-card">
+<h3 class="text-lg">Beverage Industry Representation</h3>
+<p class="text-sm">We are expert manufacturing representatives for both the alcoholic and non-alcoholic beverage sectors, connecting producers with new markets and driving growth.</p>
+</div>
+<div class="offer-card">
+<h3 class="text-lg">Advanced Chain Logistics</h3>
+<p class="text-sm">Our specialized transportation solutions, including cold chain logistics, guarantee the integrity and safety of temperature-sensitive goods from origin to destination.</p>
+</div>
+</div>
+</div>
+<div class="order-first md:order-last" data-aos="fade-left">
+<img src="specialized-services.jpg" alt="Specialized logistics for the beverage industry" class="rounded-lg shadow-lg w-full h-auto object-cover" />
+</div>
+</div>
+</div>
+</section>
+<section id="services" class="px-[3%] py-12 md:py-16 lg:py-20">
+<div class="container">
+<div class="mb-10 md:mb-14 lg:mb-16" data-aos="fade-up">
+<div class="mx-auto max-w-lg text-center">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Our Solutions</p>
+<h1 class="mb-4 text-3xl font-bold text-white md:mb-5 md:text-4xl lg:text-5xl">
+Comprehensive Business Services
+</h1>
+<p class="text-sm md:text-base text-slate-400">
+We provide integrated solutions that streamline global trade and logistics for businesses of all sizes.
+</p>
+</div>
+</div>
+<div id="import-export" class="overflow-hidden rounded-lg bg-slate-800 text-white grid grid-cols-1 md:grid-cols-2 md:items-center shadow-lg" data-aos="fade-up">
+<div class="aspect-video md:aspect-square">
+<img src="seamless2.jpg" class="w-full h-full object-cover" alt="Seamless Logistics" />
+</div>
+<div class="p-5 md:p-8 lg:p-10">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Import & Export</p>
+<h2 class="mb-4 text-2xl leading-[1.2] font-bold md:mb-5 md:text-3xl lg:text-4xl">
+Seamless Trade Solutions
+</h2>
+<p class="text-sm md:text-base text-slate-400">
+We facilitate smooth import and export processes, connecting businesses with global suppliers and ensuring efficient customs clearance.
+Our expertise in navigating international trade regulations minimizes delays and maximizes profitability.
+</p>
+</div>
+</div>
+<div id="transportation" class="mt-10 overflow-hidden rounded-lg bg-slate-800 text-white grid grid-cols-1 md:grid-cols-2 md:items-center shadow-lg" data-aos="fade-up">
+<div class="p-5 md:p-8 lg:p-10 md:order-last">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Transportation</p>
+<h2 class="mb-4 text-2xl leading-[1.2] font-bold md:mb-5 md:text-3xl lg:text-4xl">
+Reliable Logistics Network
+</h2>
+<p class="text-sm md:text-base text-slate-400">
+Our robust transportation services ensure your goods are delivered safely and on time, whether by land, sea, or air.
+We leverage a network of trusted carriers to provide cost-effective and dependable logistics solutions.
+</p>
+</div>
+<div class="aspect-video md:aspect-square">
+<img src="reliable.jpg" class="w-full h-full object-cover" alt="Transportation Network" />
+</div>
+</div>
+<div id="manufacturing" class="mt-10 overflow-hidden rounded-lg bg-slate-800 text-white grid grid-cols-1 md:grid-cols-2 md:items-center shadow-lg" data-aos="fade-up">
+<div class="aspect-video md:aspect-square">
+<img src="manufacturing1.jpg" class="w-full h-full object-cover" alt="Manufacturing Representation" />
+</div>
+<div class="p-5 md:p-8 lg:p-10">
+<p class="mb-2 font-semibold text-primary-400 text-sm md:mb-3 md:text-base">Manufacturing Representative</p>
+<h2 class="mb-4 text-2xl leading-[1.2] font-bold md:mb-5 md:text-3xl lg:text-4xl">
+Strategic Partnerships
+</h2>
+<p class="text-sm md:text-base text-slate-400">
+We serve as a vital link between manufacturers in the beverage industry and potential clients, providing strategic market entry, brand promotion, and sales channel development to foster growth and success.
+</p>
+</div>
+</div>
+</div>
+</section>
+<section id="about-us" class="px-[5%] py-16 md:py-24 lg:py-28 bg-slate-800/50">
+<div class="container">
+<div class="grid grid-cols-1 gap-y-12 md:grid-cols-2 md:items-center md:gap-x-12 lg:gap-x-20">
+<div data-aos="fade-right">
+<div class="rb-5 mb-5 md:mb-6">
+<img src="logo.png" class="size-20" alt="SSV Logo" />
+</div>
+<h2 class="rb-5 mb-5 text-4xl font-bold text-white md:mb-6 md:text-5xl lg:text-6xl">
+Our Journey of Excellence
+</h2>
+<p class="md:text-md text-slate-400">
+Founded in 2013, SSV Ventures has been a dynamic force in global trade and logistics.
+We operate from our strategic location in Tema, Community 25, committed to delivering personalized and reliable services.
+</p>
+<div class="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
+<a href="#services" class="btn"><span>Explore</span></a>
+</div>
+</div>
+<div data-aos="fade-left">
+<img src="warehouse2.jpg" class="w-full rounded-lg object-cover shadow-lg" alt="Warehouse interior"/>
+</div>
+</div>
+</div>
+</section>
+<section id="vision-mission" class="px-[5%] py-16 md:py-24 lg:py-28">
+<div class="container">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="vision-box" data-aos="fade-up">
+<h3 class="text-2xl font-bold mb-4 text-white">Our Vision</h3>
+<p class="text-slate-400">To be the most trusted and efficient gateway for trade and logistics, connecting global opportunities with local needs.</p>
+</div>
+<div class="vision-box" data-aos="fade-up" data-aos-delay="200">
+<h3 class="text-2xl font-bold mb-4 text-white">Our Mission</h3>
+<p class="text-slate-400">To facilitate seamless import and export operations, offer reliable transportation solutions, and provide unparalleled representation for manufacturers, delivering value and expertise to our partners through integrity and exceptional service.</p>
+</div>
+<div class="vision-box" data-aos="fade-up" data-aos-delay="400">
+<h3 class="text-2xl font-bold mb-4 text-white">Core Values</h3>
+<ul class="list-disc list-inside text-slate-400 space-y-2">
+<li><strong class="text-slate-200">Personal Commitment:</strong> Emphasizing tailored services.</li>
+<li><strong class="text-slate-200">Integrity:</strong> Upholding the highest ethical standards.</li>
+<li><strong class="text-slate-200">Excellence:</strong> Connecting markets with efficiency and precision.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="trusted-by" class="py-12 md:py-16 lg:py-20 bg-slate-800/50">
+<div class="container">
+<h2 class="text-center text-2xl font-bold mb-10 text-white" data-aos="fade-up">Trusted By Leading Global Businesses</h2>
+<div class="relative w-full overflow-hidden">
+<div class="flex animate-loop-horizontally">
+<img class="mx-8 h-14 object-contain" src="bel.jpg" alt="Bel Aqua Logo" />
+<img class="mx-8 h-14 object-contain" src="bel2.png" alt="Bel Beverages Logo" />
+<img class="mx-8 h-14 object-contain" src="kasapreko.png" alt="kasapreko Logo" />
+<img class="mx-8 h-14 object-contain" src="New_Guinness_Ghana_Logo.png" alt="Guinness Ghana Logo" />
+<img class="mx-8 h-14 object-contain" src="walmart.png" alt="Walmart Logo" />
+<img class="mx-8 h-14 object-contain" src="bel.jpg" alt="Bel Aqua Logo" />
+<img class="mx-8 h-14 object-contain" src="bel2.png" alt="Bel Beverages Logo" />
+<img class="mx-8 h-14 object-contain" src="kasapreko.png" alt="kasapreko logo" />
+<img class="mx-8 h-14 object-contain" src="New_Guinness_Ghana_Logo.png" alt="Guinness Ghana Logo" />
+<img class="mx-8 h-14 object-contain" src="walmart.png" alt="Walmart Logo" />
+</div>
+</div>
+</div>
+</section>
+<section id="team" class="px-[5%] py-16 md:py-24 lg:py-28">
+<div class="container">
+<div class="mx-auto max-w-lg text-center mb-12" data-aos="fade-up">
+<p class="mb-3 font-semibold text-primary-400 uppercase tracking-wider text-sm">Leadership Excellence</p>
+<h2 class="text-4xl font-bold md:text-5xl text-white mb-4">Meet The Team</h2>
+<p class="text-slate-400">Our experienced professionals driving innovation and excellence</p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 lg:gap-10">
+<!-- Team Member 1 -->
+<div class="team-member" data-aos="fade-up">
+<div class="team-avatar-wrapper">
+<div class="team-avatar">FE</div>
+<div class="team-role-badge">CEO</div>
+</div>
+<h5 class="team-name">MR. FOSTER KOSI EGEH</h5>
+<p class="team-title">CEO & FOUNDER</p>
+<button class="find-more-btn" onclick="openModal('foster')"><span>Find Out More</span></button>
+</div>
+
+<!-- Team Member 2 -->
+<div class="team-member" data-aos="fade-up" data-aos-delay="100">
+<div class="team-avatar-wrapper">
+<div class="team-avatar">RE</div>
+<div class="team-role-badge">Co-Founder</div>
+</div>
+<h5 class="team-name">MRS. REGINA AFUA EGEH</h5>
+<p class="team-title">CO-FOUNDER & DEPUTY MD</p>
+<button class="find-more-btn" onclick="openModal('regina')"><span>Find Out More</span></button>
+</div>
+
+<!-- Team Member 3 -->
+<div class="team-member" data-aos="fade-up" data-aos-delay="200">
+<div class="team-avatar-wrapper">
+<div class="team-avatar">SE</div>
+<div class="team-role-badge">IT Head</div>
+</div>
+<h5 class="team-name">MR. SEBASTIAN YAYRA EGEH</h5>
+<p class="team-title">HEAD, IT & DIGITAL SOLUTIONS</p>
+<button class="find-more-btn" onclick="openModal('sebastian')"><span>Find Out More</span></button>
+</div>
+
+<!-- Team Member 4 -->
+<div class="team-member" data-aos="fade-up" data-aos-delay="300">
+<div class="team-avatar-wrapper">
+<div class="team-avatar">SA</div>
+<div class="team-role-badge">PR Head</div>
+</div>
+<h5 class="team-name">MS. SABINA EYRAM EGEH</h5>
+<p class="team-title">HEAD, PUBLIC RELATIONS</p>
+<button class="find-more-btn" onclick="openModal('sabina')"><span>Find Out More</span></button>
+</div>
+
+<!-- Team Member 5 -->
+<div class="team-member" data-aos="fade-up" data-aos-delay="400">
+<div class="team-avatar-wrapper">
+<div class="team-avatar">VE</div>
+<div class="team-role-badge">PR Assistant</div>
+</div>
+<h5 class="team-name">MS. VALENTINA ENYONAM EGEH</h5>
+<p class="team-title">ASSISTANT, PUBLIC RELATIONS</p>
+<button class="find-more-btn" onclick="openModal('valentina')"><span>Find Out More</span></button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Team Modals -->
+<div id="modal-foster" class="team-modal" onclick="closeModalOnOutsideClick(event, 'foster')">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal('foster')">×</button>
+<div class="modal-header">
+<img src="foster.jpg" alt="Foster Egeh" class="modal-avatar">
+<h3 class="modal-name">MR. FOSTER KOSI EGEH</h3>
+<p class="modal-title">CEO & FOUNDER</p>
+<span class="modal-badge">Leadership</span>
+</div>
+<div class="modal-body">
+<p>The founder and Managing Proprietor of SSV Ventures, has over 22 years of working experience in the Banking Industry in Ghana and other Accounting roles.</p>
+<p>He worked at The Royal Bank (GH) Ltd, Sahel Sahara Bank Ltd, CAL Bank Ltd, and KaKum Rural Bank Ltd.</p>
+<p>He holds a Certificate in Petroleum, Oil & Gas Management from GIMPA, an MBA (Finance) from GIMPA, and a Bachelor of Commerce from the University of Cape Coast.</p>
+<p>He is responsible for all day-to-day management of the business and strategy, bringing visionary leadership and extensive experience in international trade and strategic business development.</p>
+</div>
+</div>
+</div>
+
+<div id="modal-regina" class="team-modal" onclick="closeModalOnOutsideClick(event, 'regina')">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal('regina')">×</button>
+<div class="modal-header">
+<img src="regina.jpg" alt="Regina Egeh" class="modal-avatar">
+<h3 class="modal-name">MRS. REGINA AFUA EGEH</h3>
+<p class="modal-title">CO-FOUNDER & DEPUTY MANAGING PROPRIETRESS</p>
+<span class="modal-badge">HR & Marketing</span>
+</div>
+<div class="modal-body">
+<p>As the Co-Founder and Deputy Managing Proprietress, Mrs. Egeh has over 25 years of exceptional experience as an educator.</p>
+<p>She is in charge of the Venture's Human Resources and Marketing.</p>
+<p>She holds a Master's in Educational Administration and a Bachelor of Education from the University of Cape Coast, along with a Diploma and a Post 3-year Certificate "A" Teacher Education.</p>
+<p>Her expertise is crucial for brand management and corporate communications, specializing in human resources, marketing, and client relations.</p>
+</div>
+</div>
+</div>
+
+<div id="modal-sebastian" class="team-modal" onclick="closeModalOnOutsideClick(event, 'sebastian')">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal('sebastian')">×</button>
+<div class="modal-header">
+<img src="sebastian.jpg" alt="Sebastian Egeh" class="modal-avatar">
+<h3 class="modal-name">MR. SEBASTIAN KOMLA YAYRA EGEH</h3>
+<p class="modal-title">HEAD, IT & DIGITAL SOLUTIONS</p>
+<span class="modal-badge">Technology</span>
+</div>
+<div class="modal-body">
+<p>A Computer Science student at KNUST and an alumnus of Mfantsipim School, Sebastian leads the company's technological initiatives.</p>
+<p>He is in charge of Accounting, Information Technology, and digital solutions, from managing digital logistics platforms to overseeing internal systems.</p>
+<p>His work ensures that SSV Ventures remains at the forefront of technological efficiency, managing all digital solutions, accounting, and logistics with expertise and innovation.</p>
+</div>
+</div>
+</div>
+
+<div id="modal-sabina" class="team-modal" onclick="closeModalOnOutsideClick(event, 'sabina')">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal('sabina')">×</button>
+<div class="modal-header">
+<img src="SABINA.png" alt="Sabina Egeh" class="modal-avatar">
+<h3 class="modal-name">MS. SABINA AKOSUA EYRAM EGEH</h3>
+<p class="modal-title">HEAD, PUBLIC RELATIONS & MARKETING</p>
+<span class="modal-badge">PR & Marketing</span>
+</div>
+<div class="modal-body">
+<p>A graduate of Wesley Girls' High School, Cape Coast, Sabina is in charge of Public Relations and Marketing.</p>
+<p>She manages marketing campaigns, media relations, and promotional events, ensuring that SSV Ventures maintains a strong and positive presence in the global trade and logistics industry.</p>
+<p>Her strategic approach to public relations helps build lasting relationships with clients and partners worldwide.</p>
+</div>
+</div>
+</div>
+
+<div id="modal-valentina" class="team-modal" onclick="closeModalOnOutsideClick(event, 'valentina')">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal('valentina')">×</button>
+<div class="modal-header">
+<img src="VAL.png" alt="Valentina Egeh" class="modal-avatar">
+<h3 class="modal-name">MS. VALENTINA AFUA ENYONAM EGEH</h3>
+<p class="modal-title">ASSISTANT, PUBLIC RELATIONS</p>
+<span class="modal-badge">PR Support</span>
+</div>
+<div class="modal-body">
+<p>As a student of Wesley Girls' High School and a graduate of Go Green Community School, Valentina is an assistant in charge of Public Relations and Media activities.</p>
+<p>She supports the PR department with media outreach, content creation, and event coordination.</p>
+<p>Her contributions are vital to the successful execution of our marketing strategies, assisting with public relations and media activities with dedication and creativity.</p>
+</div>
+</div>
+</div>
+<section id="contact" class="px-[5%] py-16 md:py-24 lg:py-28 bg-slate-800/50">
+<div class="container grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+<div data-aos="fade-right">
+<p class="font-semibold text-primary-400">Connect</p>
+<h2 class="text-4xl font-bold mt-2 mb-4 text-white">Contact Us</h2>
+<p class="text-slate-400">Send us a message and we'll respond promptly.</p>
+<div class="mt-8 space-y-4">
+<a href="mailto:ssvventures2013@gmail.com" class="contact-link">
+<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" class="size-6 flex-none text-primary-400" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 2v.511l-8 6.223-8-6.222V6h16zM4 18V9.044l7.386 5.745a.994.994 0 0 0 1.228 0L20 9.044 20.002 18H4z"></path></svg>
+<span>ssvventures2013@gmail.com</span>
+</a>
+<a href="https://wa.me/233244546668" target="_blank" rel="noopener noreferrer" class="contact-link">
+<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" class="size-6 flex-none text-primary-400" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M17.707 12.293a.999.999 0 0 0-1.414 0l-1.594 1.594c-.739-.22-2.118-.72-2.992-1.594s-1.374-2.253-1.594-2.992l1.594-1.594a.999.999 0 0 0 0-1.414l-4-4a.999.999 0 0 0-1.414 0L3.581 5.005c-.38.38-.594.902-.586 1.435.023 1.424.4 6.37 4.298 10.268s8.844 4.274 10.269 4.298h.028c.528 0 1.027-.208 1.405-.586l2.712-2.712a.999.999 0 0 0 0-1.414l-4-4.001zm-.127 6.712c-1.248-.021-5.518-.356-8.873-3.712-3.366-3.366-3.692-7.651-3.712-8.874L7 4.414 9.586 7 8.293 8.293a1 1 0 0 0-.272.912c.024.115.611 2.842 2.271 4.502s4.387 2.247 4.502 2.271a.991.991 0 0 0 .912-.271L17 14.414 19.586 17l-2.006 2.005z"></path></svg>
+<span>+233 244 546 668</span>
+</a>
+<div class="contact-link">
+<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" class="size-6 flex-none text-primary-400" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M12 14c2.206 0 4-1.794 4-4s-1.794-4-4-4-4 1.794-4 4 1.794 4 4 4zm0-6c1.103 0 2 .897 2 2s-.897 2-2 2-2-.897-2-2 .897-2 2-2z"></path><path d="M11.42 21.814a.998.998 0 0 0 1.16 0C12.884 21.599 20.029 16.44 20 10c0-4.411-3.589-8-8-8S4 5.589 4 9.995c-.029 6.445 7.116 11.604 7.42 11.819zM12 4c3.309 0 6 2.691 6 6.005.021 4.438-4.388 8.423-6 9.73-1.611-1.308-6.021-5.294-6-9.735 0-3.309 2.691-6 6-6z"></path></svg>
+<span>Tema Community 25, Greater Accra</span>
+</div>
+</div>
+<div class="mt-8 rounded-lg overflow-hidden" data-aos="fade-up">
+<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15881.33642738222!2d-0.02165086888427734!3d5.670277999999995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xfdf87a329500001%3A0x7f232d3c9071c35a!2sCommunity%2025!5e0!3m2!1sen!2sgh!4v1726601423851!5m2!1sen!2sgh" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+</div>
+</div>
+<section id="contact-form-section" class="bg-transparent py-0"> <div class="max-w-4xl mx-auto">
+<form id="contact-form"
+action="https://formspree.io/f/mrbawbvy"
+method="POST"
+class="bg-white rounded-xl shadow-lg p-8 space-y-6"
+data-aos="fade-left">
+<h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Send Us A Message</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div>
+<label class="form-label block mb-2 font-medium text-gray-700" for="firstName">First name</label>
+<input type="text" name="firstName" id="firstName" required
+class="form-input w-full rounded-lg border-gray-300 p-3 focus:ring-2 focus:ring-blue-500" />
+</div>
+<div>
+<label class="form-label block mb-2 font-medium text-gray-700" for="lastName">Last name</label>
+<input type="text" name="lastName" id="lastName" required
+class="form-input w-full rounded-lg border-gray-300 p-3 focus:ring-2 focus:ring-blue-500" />
+</div>
+</div>
+<div>
+<label class="form-label block mb-2 font-medium text-gray-700" for="email">
+Email <span class="text-red-500">*</span>
+</label>
+<input type="email" name="email" id="email" required
+class="form-input w-full rounded-lg border-gray-300 p-3 focus:ring-2 focus:ring-blue-500" />
+</div>
+<div>
+<label class="form-label block mb-2 font-medium text-gray-700" for="phone">Phone number</label>
+<input type="tel" name="phone" id="phone"
+class="form-input w-full rounded-lg border-gray-300 p-3 focus:ring-2 focus:ring-blue-500" />
+</div>
+<div>
+<label class="form-label block mb-2 font-medium text-gray-700" for="message">Message</label>
+<textarea name="message" id="message" required
+placeholder="Tell us about your needs"
+class="form-input w-full rounded-lg border-gray-300 p-3 min-h-[10rem] focus:ring-2 focus:ring-blue-500"></textarea>
+</div>
+<div class="text-center">
+<button id="submit-btn" type="submit"
+class="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2">
+<span id="btn-text">Submit Message</span>
+<svg id="btn-spinner" class="hidden animate-spin h-5 w-5 text-white"
+xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10"
+stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" fill="currentColor"
+d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+</svg>
+</button>
+</div>
+<div id="form-success" class="hidden mt-4 p-4 rounded-lg bg-green-100 text-green-700 text-center font-medium">
+Message sent successfully! We’ll get back to you soon.
+</div>
+<div id="form-error" class="hidden mt-4 p-4 rounded-lg bg-red-100 text-red-700 text-center font-medium">
+Oops! Something went wrong. Please try again later.
+</div>
+</form>
+</div>
+</section>
+</div>
+</section>
+<script>
+const form = document.getElementById("contact-form");
+const successMsg = document.getElementById("form-success");
+const errorMsg = document.getElementById("form-error");
+const submitBtn = document.getElementById("submit-btn");
+const btnText = document.getElementById("btn-text");
+const btnSpinner = document.getElementById("btn-spinner");
+form.addEventListener("submit", async function (e) {
+e.preventDefault();
+// Show spinner and disable button
+btnText.textContent = "Sending...";
+btnSpinner.classList.remove("hidden");
+submitBtn.disabled = true;
+const formData = new FormData(form);
+try {
+const response = await fetch(form.action, {
+method: form.method,
+body: formData,
+headers: { 'Accept': 'application/json' }
+});
+if (response.ok) {
+successMsg.classList.remove("hidden");
+errorMsg.classList.add("hidden");
+form.reset();
+} else {
+throw new Error("Network error");
+}
+} catch (error) {
+successMsg.classList.add("hidden");
+errorMsg.classList.remove("hidden");
+}
+// Reset button state
+btnText.textContent = "Submit Message";
+btnSpinner.classList.add("hidden");
+submitBtn.disabled = false;
+});
+</script>
+</main>
+<footer class="footer-bg w-full py-16 px-[5%]">
+<div class="footer-overlay"></div>
+<div class="container relative z-10 space-y-10">
+<div class="footer-grid">
+<div class="footer-card">
+<div class="flex items-center gap-4 mb-4">
+<img src="logo.png" alt="SSV Ventures" class="site-logo h-12 w-auto object-contain" loading="lazy" />
+<div>
+<p class="text-xs uppercase tracking-[0.3em] text-slate-400">Est. 2013</p>
+<h3 class="text-2xl font-bold text-white">SSV Ventures</h3>
+</div>
+</div>
+<p class="text-slate-300 text-sm leading-relaxed mb-6">Your trusted partner in connecting global opportunities with local expertise. We provide reliable import/export, logistics, and manufacturing representation tailored to your growth.</p>
+<div class="flex gap-6">
+<div>
+<p class="text-3xl font-bold text-white">12+</p>
+<p class="text-xs tracking-wide text-slate-400 uppercase">Years</p>
+</div>
+<div>
+<p class="text-3xl font-bold text-white">5</p>
+<p class="text-xs tracking-wide text-slate-400 uppercase">Core Services</p>
+</div>
+</div>
+</div>
+<div class="footer-card">
+<h3 class="footer-title">Quick Links</h3>
+<ul class="footer-links">
+<li><a href="#home" class="footer-link">Home</a></li>
+<li><a href="#services" class="footer-link">Solutions</a></li>
+<li><a href="#about-us" class="footer-link">About</a></li>
+<li><a href="#team" class="footer-link">Leadership</a></li>
+<li><a href="#contact" class="footer-link">Contact</a></li>
+</ul>
+</div>
+<div class="footer-card">
+<h3 class="footer-title">Expertise</h3>
+<ul class="footer-links">
+<li><a href="#import-export" class="footer-link">Import & Export</a></li>
+<li><a href="#transportation" class="footer-link">Transportation</a></li>
+<li><a href="#manufacturing" class="footer-link">Manufacturing Rep</a></li>
+<li><a href="#specialization" class="footer-link">Beverage Industry</a></li>
+<li><a href="#what-we-offer" class="footer-link">More Services</a></li>
+</ul>
+</div>
+<div class="footer-card">
+<h3 class="footer-title">Stay Connected</h3>
+<p class="text-slate-300 text-sm">Join our updates for insights on trade policies, logistics tips, and partnership opportunities.</p>
+<form class="footer-newsletter mt-5" onsubmit="return false;">
+<input type="email" placeholder="Email Address" class="newsletter-input" aria-label="Email" />
+<button type="button" class="newsletter-btn">Join</button>
+</form>
+<ul class="footer-contact mt-6">
+<li><a href="tel:+233244546668" class="footer-link">+233 244 546 668</a></li>
+<li><a href="tel:+233243241049" class="footer-link">+233 243 241 049</a></li>
+<li><a href="mailto:ssvventures2013@gmail.com" class="footer-link">ssvventures2013@gmail.com</a></li>
+<li><span class="text-slate-300 text-sm">Tema Community 25, Golf Junction</span></li>
+</ul>
+<div class="footer-social mt-6">
+<a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+<a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+<a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+</div>
+</div>
+</div>
+<div class="footer-divider"></div>
+<div class="footer-bottom">
+<p class="text-slate-300 text-sm">© 2025 SSV Ventures. All rights reserved.</p>
+<div class="footer-bottom-links">
+<a href="mailto:ssvventures2013@gmail.com" class="footer-link">Email</a>
+<span>|</span>
+<a href="https://wa.me/233244546668" target="_blank" rel="noopener noreferrer" class="footer-link">Chat on WhatsApp</a>
+</div>
+</div>
+</div>
+</footer>
+
+<a href="https://wa.me/233244546668" class="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Contact us on WhatsApp">
+<i class="fa-brands fa-whatsapp"></i>
+</a>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+AOS.init({
+duration: 800,
+once: true,
+mirror: false,
+});
+
+// Scroll Progress Bar
+window.addEventListener('scroll', () => {
+const scrollProgress = document.getElementById('scroll-progress');
+if (scrollProgress) {
+const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+const scrollPercentage = (scrollTop / scrollHeight) * 100;
+scrollProgress.style.width = scrollPercentage + '%';
+}
+});
+
+// Mobile menu toggle
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const mobileMenu = document.getElementById('mobile-menu');
+if (mobileMenuButton && mobileMenu) {
+mobileMenuButton.addEventListener('click', () => {
+mobileMenu.classList.toggle('hidden');
+const spans = mobileMenuButton.querySelectorAll('span');
+if (!mobileMenu.classList.contains('hidden')) {
+spans[0].style.transform = 'translateY(7px) rotate(45deg)';
+spans[1].style.opacity = '0';
+spans[2].style.transform = 'translateY(-7px) rotate(-45deg)';
+} else {
+spans[0].style.transform = 'none';
+spans[1].style.opacity = '1';
+spans[2].style.transform = 'none';
+}
+});
+
+// Close mobile menu when clicking a link
+document.querySelectorAll('.mobile-nav-link').forEach(link => {
+link.addEventListener('click', () => {
+mobileMenu.classList.add('hidden');
+const spans = mobileMenuButton.querySelectorAll('span');
+spans[0].style.transform = 'none';
+spans[1].style.opacity = '1';
+spans[2].style.transform = 'none';
+});
+});
+}
+
+// Team "Read More" functionality
+document.querySelectorAll('.read-more-btn').forEach(button => {
+button.addEventListener('click', () => {
+const memberDiv = button.closest('.team-member');
+const shortDesc = memberDiv.querySelector('.short-description');
+const fullDesc = memberDiv.querySelector('.full-description');
+if (fullDesc.classList.contains('hidden')) {
+shortDesc.classList.add('hidden');
+fullDesc.classList.remove('hidden');
+button.textContent = 'Read Less';
+} else {
+shortDesc.classList.remove('hidden');
+fullDesc.classList.add('hidden');
+button.textContent = 'Read More';
+}
+});
+});
+
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+anchor.addEventListener('click', function (e) {
+e.preventDefault();
+const target = document.querySelector(this.getAttribute('href'));
+if (target) {
+target.scrollIntoView({
+behavior: 'smooth',
+block: 'start'
+});
+}
+});
+});
+
+// Add parallax effect to hero section
+window.addEventListener('scroll', () => {
+const heroSection = document.querySelector('#home img');
+if (heroSection) {
+const scrolled = window.pageYOffset;
+heroSection.style.transform = `translateY(${scrolled * 0.5}px)`;
+}
+});
+
+// Modal functions for team members
+function openModal(memberId) {
+const modal = document.getElementById(`modal-${memberId}`);
+if (modal) {
+modal.classList.add('active');
+document.body.style.overflow = 'hidden';
+}
+}
+
+function closeModal(memberId) {
+const modal = document.getElementById(`modal-${memberId}`);
+if (modal) {
+modal.classList.remove('active');
+document.body.style.overflow = 'auto';
+}
+}
+
+function closeModalOnOutsideClick(event, memberId) {
+if (event.target.classList.contains('team-modal')) {
+closeModal(memberId);
+}
+}
+
+// Close modal on ESC key
+document.addEventListener('keydown', (e) => {
+if (e.key === 'Escape') {
+document.querySelectorAll('.team-modal.active').forEach(modal => {
+modal.classList.remove('active');
+document.body.style.overflow = 'auto';
+});
+}
+});
+
+// Hero Slider Functionality
+let currentSlide = 0;
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.slider-dots .dot');
+let autoSlideInterval;
+
+function showSlide(index) {
+// Remove active class from all slides and dots
+slides.forEach(slide => slide.classList.remove('active'));
+dots.forEach(dot => dot.classList.remove('active'));
+    
+// Wrap around if index is out of bounds
+if (index >= slides.length) {
+currentSlide = 0;
+} else if (index < 0) {
+currentSlide = slides.length - 1;
+} else {
+currentSlide = index;
+}
+    
+// Add active class to current slide and dot
+slides[currentSlide].classList.add('active');
+dots[currentSlide].classList.add('active');
+}
+
+function changeSlide(direction) {
+showSlide(currentSlide + direction);
+resetAutoSlide();
+}
+
+function goToSlide(index) {
+showSlide(index);
+resetAutoSlide();
+}
+
+function resetAutoSlide() {
+clearInterval(autoSlideInterval);
+startAutoSlide();
+}
+
+function startAutoSlide() {
+autoSlideInterval = setInterval(() => {
+showSlide(currentSlide + 1);
+}, 5000); // Change slide every 5 seconds
+}
+
+// Initialize slider
+showSlide(0);
+startAutoSlide();
+
+// Pause auto-slide on hover
+const heroSliderSection = document.querySelector('.hero-slider-section');
+if (heroSliderSection) {
+heroSliderSection.addEventListener('mouseenter', () => {
+clearInterval(autoSlideInterval);
+});
+    
+heroSliderSection.addEventListener('mouseleave', () => {
+startAutoSlide();
+});
+}
+</script>
+</body>
+</html>
