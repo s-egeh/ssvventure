@@ -165,6 +165,13 @@ background-color: #3B82F6; /* Blue on hover, like contact button */
 </span>
 <span class="label">Contact</span>
 </a>
+<!-- Secure admin entry (right-aligned via .nav-item--admin); use <li> only if you switch nav to <ul> -->
+<a href="admin-login.html" class="nav-item nav-item--admin" rel="noopener noreferrer">
+<span class="icon">
+<i class="fa-solid fa-user-shield" aria-hidden="true"></i>
+</span>
+<span class="label">Admin Portal</span>
+</a>
 </nav>
 
 <!-- Mobile Menu Button -->
@@ -199,6 +206,9 @@ background-color: #3B82F6; /* Blue on hover, like contact button */
 </a>
 <a href="#contact" class="mobile-nav-link text-white text-2xl font-semibold hover:text-orange-400 transition-colors">
 <i class="fa-solid fa-envelope mr-3"></i>Contact
+</a>
+<a href="admin-login.html" class="mobile-nav-link mobile-nav-link--admin text-2xl font-semibold transition-colors" rel="noopener noreferrer">
+<i class="fa-solid fa-user-shield mr-3"></i>Admin Portal
 </a>
 </div>
 </div>
@@ -323,7 +333,13 @@ From customs clearance to final delivery, we handle every aspect of your logisti
 <span class="dot" onclick="goToSlide(2)"></span>
 <span class="dot" onclick="goToSlide(3)"></span>
 </div>
-</div>
+
+<!-- Mobile-only: visible Admin Login CTA in hero (desktop uses floating navbar link). Placed here inside .hero-slider-container so it sits above slides with the slider chrome. -->
+<a href="admin-login.html" class="hero-mobile-admin-btn" rel="noopener noreferrer" aria-label="Admin login — secure portal">
+<i class="fa-solid fa-user-lock" aria-hidden="true"></i>
+<span class="hero-mobile-admin-btn__text">Admin Login</span>
+</a>
+
 </div>
 </section>
 <section id="why-us" class="px-[3%] py-16 md:py-20 lg:py-24 why-us-section">

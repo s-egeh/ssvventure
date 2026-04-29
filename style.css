@@ -160,6 +160,77 @@ html {
         box-shadow: 0 6px 20px rgba(255, 108, 70, 0.5);
     }
 
+    /* Admin Portal — secure gateway (desktop floating nav) */
+    .nav-item--admin {
+        margin-left: auto;
+        flex-shrink: 0;
+        width: auto;
+        max-width: none;
+        padding: 6px 10px 6px 8px;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(59, 130, 246, 0.12));
+        border: 1px solid rgba(45, 212, 191, 0.45);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 4px 18px rgba(15, 23, 42, 0.45);
+    }
+
+    .nav-item--admin:hover {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(59, 130, 246, 0.2));
+        border-color: rgba(56, 189, 248, 0.65);
+        color: #f0fdfa;
+        box-shadow:
+            0 0 0 1px rgba(56, 189, 248, 0.35),
+            0 0 28px rgba(16, 185, 129, 0.35),
+            0 8px 24px rgba(59, 130, 246, 0.25);
+    }
+
+    .nav-item--admin .icon {
+        background: linear-gradient(145deg, #0d9488, #059669);
+        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.45);
+    }
+
+    .nav-item--admin:hover .icon {
+        background: linear-gradient(145deg, #10b981, #0ea5e9);
+        transform: scale(1.08);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.55), 0 6px 18px rgba(14, 165, 233, 0.4);
+    }
+
+    /* Keep label readable as a small CTA (not only on hover) */
+    .nav-item--admin .label,
+    .nav-item--admin .nav-item--admin-label {
+        max-width: 200px;
+        opacity: 1;
+        margin-left: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #ccfbf1;
+    }
+
+    .nav-item--admin:hover .label,
+    .nav-item--admin:hover .nav-item--admin-label {
+        color: #fff;
+    }
+
+    /* Mobile overlay — Admin Portal */
+    .mobile-nav-link--admin {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.5rem;
+        padding: 0.85rem 1.75rem;
+        border-radius: 999px;
+        color: #ecfdf5 !important;
+        background: linear-gradient(135deg, rgba(13, 148, 136, 0.35), rgba(37, 99, 235, 0.35));
+        border: 2px solid rgba(45, 212, 191, 0.55);
+        box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);
+    }
+
+    .mobile-nav-link--admin:hover {
+        border-color: rgba(56, 189, 248, 0.85);
+        box-shadow: 0 0 32px rgba(16, 185, 129, 0.45), 0 0 20px rgba(59, 130, 246, 0.3);
+        color: #fff !important;
+    }
+
     .site-logo {
         image-rendering: -webkit-optimize-contrast;
         image-rendering: optimizeQuality;
@@ -1109,6 +1180,71 @@ html {
         
         .dot.active {
             width: 24px;
+        }
+    }
+
+    /* Mobile-only floating Admin Login CTA in hero (#home) */
+    .hero-mobile-admin-btn {
+        display: none;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 768px) {
+        .hero-mobile-admin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: absolute;
+            right: max(12px, env(safe-area-inset-right, 0px));
+            bottom: max(88px, calc(20px + env(safe-area-inset-bottom, 0px) + 52px));
+            z-index: 25;
+            min-height: 48px;
+            min-width: 48px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #ecfdf5;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(45, 212, 191, 0.45);
+            box-shadow:
+                0 4px 20px rgba(0, 0, 0, 0.35),
+                0 0 0 1px rgba(59, 130, 246, 0.2),
+                0 0 28px rgba(16, 185, 129, 0.22);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .hero-mobile-admin-btn i {
+            font-size: 1.15rem;
+            color: #5eead4;
+        }
+
+        .hero-mobile-admin-btn__text {
+            white-space: nowrap;
+        }
+
+        .hero-mobile-admin-btn:hover,
+        .hero-mobile-admin-btn:focus-visible {
+            outline: none;
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.55), rgba(37, 99, 235, 0.45));
+            border-color: rgba(56, 189, 248, 0.75);
+            color: #fff;
+            box-shadow:
+                0 6px 28px rgba(0, 0, 0, 0.4),
+                0 0 36px rgba(16, 185, 129, 0.45),
+                0 0 24px rgba(59, 130, 246, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .hero-mobile-admin-btn:active {
+            transform: translateY(0);
         }
     }
 }

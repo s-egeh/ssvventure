@@ -25,6 +25,14 @@ A professional website for SSV Ventures, showcasing global trade, logistics, imp
 ## Setup
 Simply open `index.html` in a web browser to view the website.
 
+### Fleet admin (GitHub Pages)
+When hosted at `https://s-egeh.github.io/ssvventure/`:
+- Public site: `/index.html`
+- Admin login: `/admin-login.html`
+- Dashboard: `/admin-dashboard.html` (requires login)
+
+Configure **Supabase Auth → URL configuration** with your GitHub Pages URL (Site URL and Redirect URLs), or authentication redirects may fail outside localhost.
+
 ## Contact
 Email: ssvventures2013@gmail.com
 Phone: +233 244 546 668

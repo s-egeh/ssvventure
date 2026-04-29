@@ -1,0 +1,555 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
+body.dashboard-body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+    display: flex;
+    height: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.sidebar-header {
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 20px;
+}
+
+.dash-logo {
+    width: 80px;
+    margin-bottom: 10px;
+}
+
+.nav-links {
+    list-style: none;
+    flex-grow: 1;
+}
+
+.nav-links li {
+    padding: 15px 25px;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #94a3b8;
+}
+
+.nav-links li:hover, .nav-links li.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-right: 4px solid #3b82f6;
+}
+
+.logout-btn {
+    margin: 20px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.notification-icon {
+    position: relative;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: 0.3s;
+}
+
+.notification-icon:hover { color: white; }
+
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background: #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+}
+
+/* Section visibility */
+.content-section {
+    display: none;
+}
+
+.content-section.active-section {
+    display: block;
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.glass-card h4 {
+    margin-bottom: 20px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Inputs & Forms */
+.input-group { margin-bottom: 15px; }
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-group input:focus {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.action-btn {
+    width: 100%;
+    padding: 12px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.action-btn:hover { background: #2563eb; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+th { color: #94a3b8; font-weight: 500; }
+
+tbody tr { transition: 0.3s; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status.active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.status.sacked { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+.sack-btn {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.sack-btn:hover { background: #ef4444; color: white; }
+
+.section-header {
+    margin-bottom: 8px;
+}
+
+.section-header h3 {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+}
+
+.section-header p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    max-width: 640px;
+}
+
+.muted-text {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.fleet-hint {
+    margin-bottom: 16px;
+}
+
+.overview-grid {
+    grid-template-columns: 1fr;
+    max-width: 720px;
+}
+
+.truck-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+@media (max-width: 1100px) {
+    .truck-top-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fleet-status-card {
+    margin-top: 20px;
+}
+
+.input-group select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #e2e8f0;
+    outline: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.input-group select:focus {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.input-group select option {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+.inline-error {
+    background: rgba(239, 68, 68, 0.15);
+    border-left: 3px solid #ef4444;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    color: #fecaca;
+}
+
+.action-btn-accent {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-btn .fa-spin {
+    margin-right: 4px;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 10px;
+}
+
+/* Telemetry toolbar & PDF export region */
+.telemetry-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0 20px;
+    align-items: center;
+}
+
+.telemetry-top-bar {
+    margin: 16px 0 20px;
+    padding: 16px;
+}
+
+.telemetry-filter-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(170px, 1fr)) auto auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.date-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.date-filter-group label {
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+.date-filter-group input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #e2e8f0;
+}
+
+.telemetry-generate-btn,
+.telemetry-pdf-btn {
+    min-width: 170px;
+}
+
+.action-btn-secondary {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-btn-secondary:hover {
+    background: rgba(59, 130, 246, 0.28);
+}
+
+.telemetry-pdf-root {
+    margin-bottom: 24px;
+    padding: 28px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pdf-export-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pdf-export-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 6px;
+}
+
+.pdf-export-meta {
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.telemetry-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 960px) {
+    .telemetry-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.telemetry-chart-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.telemetry-chart-card h4 {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-canvas-wrap {
+    position: relative;
+    height: 220px;
+}
+
+.telemetry-highlights {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 700px) {
+    .telemetry-highlights {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pdf-highlight-card {
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+}
+
+.pdf-highlight-card h4 {
+    color: #3b82f6;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.highlight-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.highlight-sub {
+    margin-top: 6px;
+    font-size: 0.8rem;
+}
+
+.telemetry-table-card {
+    margin-top: 8px;
+}
+
+.telemetry-table-card h4 {
+    color: #3b82f6;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.telemetry-alerts-card {
+    margin-top: 20px;
+}
+
+.telemetry-alerts-list {
+    display: grid;
+    gap: 10px;
+}
+
+.telemetry-alert {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    border: 1px solid transparent;
+}
+
+.telemetry-alert-danger {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #fecaca;
+}
+
+.telemetry-alert-neutral {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: #bfdbfe;
+}
+
+@media (max-width: 980px) {
+    .telemetry-filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .telemetry-generate-btn,
+    .telemetry-pdf-btn {
+        min-width: 100%;
+    }
+}
