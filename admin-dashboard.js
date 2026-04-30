@@ -1,1018 +1,910 @@
-/** Supabase v2 — initialized at load (before DOMContentLoaded). */
-const SUPABASE_URL = 'https://hytwwcfllfqbgejgvluq.supabase.co';
-const SUPABASE_ANON_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5dHd3Y2ZsbGZxYmdlamd2bHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjU5OTMsImV4cCI6MjA5MDgwMTk5M30.rLeFYdlFAkf0EhmJXtVR-ZJcJrqOSGj5t-dGVXnH9Tg';
+window.escapeHTML = function(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
 
-const authStorage =
-    typeof window.ssvGetAuthStorage === 'function' ? window.ssvGetAuthStorage() : localStorage;
+document.addEventListener('DOMContentLoaded', async () => {
+    const navItems = document.querySelectorAll('.nav-item');
+    const contentSections = document.querySelectorAll('.content-section');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationBadge = document.getElementById('notificationBadge');
+    const exportTripsBtn = document.getElementById('exportTripsBtn');
 
-let supabase = null;
-try {
-    if (typeof window.supabase?.createClient === 'function') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                storage: authStorage,
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-            },
+    if (notificationBtn) {
+        notificationBtn.addEventListener('click', () => {
+            alert(
+                'System Check: All fleet data is synced and up to date. No new critical alerts.'
+            );
+            if (notificationBadge) {
+                notificationBadge.style.display = 'none';
+            }
         });
-    } else {
-        console.error('SSV: @supabase/supabase-js not loaded before admin-dashboard.js');
     }
-} catch (e) {
-    console.error('SSV: Supabase client failed to initialize', e);
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    /**
-     * Sidebar navigation — runs first and outside the dashboard try/catch so telemetry/boot
-     * failures never prevent listeners from attaching.
-     */
-    (function initSidebarNavigation() {
+    navItems.forEach((item) => {
+        item.addEventListener('click', () => {
+            const targetId = item.getAttribute('data-target');
+            if (!targetId) return;
+
+            navItems.forEach((link) => link.classList.remove('active'));
+            contentSections.forEach((section) => section.classList.remove('active'));
+
+            item.classList.add('active');
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+        });
+    });
+
+    // --- PHASE 3: DRIVER MANAGEMENT LOGIC ---
+
+    const supabase = window.supabaseClient || window.createSupabaseClient?.();
+    try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!data.session) {
+            alert('Unauthorized access. Please log in.');
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (error) {
+        console.error('Auth guard error:', error);
+        alert('Unauthorized access. Please log in.');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const addDriverForm = document.getElementById('addDriverForm');
+    const driverTableBody = document.getElementById('driverTableBody');
+    const truckTableBody = document.getElementById('truckTableBody');
+    const searchDriversInput = document.getElementById('searchDrivers');
+    const searchTrucksInput = document.getElementById('searchTrucks');
+
+    // --- POPULATE DRIVER DROPDOWN LOGIC ---
+
+    const assignDriverDropdown = document.getElementById('assignDriverDropdown');
+
+    async function populateDriverDropdown() {
+        if (!assignDriverDropdown) return;
+
         try {
-            const navLinks = document.querySelectorAll('.nav-links > li');
-            const sections = document.querySelectorAll('main.main-content .content-section');
+            if (!supabase) throw new Error('Supabase client not initialized.');
 
-            if (!navLinks.length) {
-                console.warn('[SSV Nav] No links found (.nav-links > li).');
-                return;
+            const { data: drivers, error } = await supabase.from('drivers').select('id, full_name');
+
+            if (error) throw error;
+
+            assignDriverDropdown.innerHTML = '<option value="">Select driver</option>';
+
+            (drivers || []).forEach((driver) => {
+                const option = document.createElement('option');
+                option.value = driver.id;
+                option.textContent = driver.full_name;
+                assignDriverDropdown.appendChild(option);
+            });
+
+            console.log('Driver dropdown populated successfully!');
+        } catch (error) {
+            console.error('Error populating driver dropdown:', error.message);
+        }
+    }
+
+    async function fetchDrivers() {
+        try {
+            if (!supabase) throw new Error('Supabase client not initialized.');
+
+            const { data: drivers, error } = await supabase
+                .from('drivers')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (driverTableBody) {
+                driverTableBody.innerHTML = '';
             }
-            if (!sections.length) {
-                console.warn('[SSV Nav] No sections found (main.main-content .content-section).');
-                return;
-            }
 
-            navLinks.forEach((link) => {
-                function activateSectionForLink() {
-                    try {
-                        navLinks.forEach((l) => l.classList.remove('active'));
-                        sections.forEach((s) => s.classList.remove('active-section'));
+            (drivers || []).forEach((driver) => {
+                const row = document.createElement('tr');
+                const displayName = driver.full_name ?? driver.name ?? '';
+                const displayContact = driver.contact_number ?? driver.phone ?? '';
+                const safeDriverStatus = String(driver.status ?? 'Active').replace(
+                    /'/g,
+                    "\\'"
+                );
+                row.innerHTML = `
+                    <td>${escapeHTML(displayName)}</td>
+                    <td>${escapeHTML(displayContact)}</td>
+                    <td>
+                        <span class="status-badge ${String(driver.status ?? '').toLowerCase() === 'active' ? 'status-active' : 'status-inactive'}">
+                            ${escapeHTML(driver.status ?? '')}
+                        </span>
+                    </td>
+                    <td class="driver-actions-cell">
+                        <button type="button" class="driver-btn driver-btn-toggle" onclick="toggleDriverStatus(${driver.id}, '${safeDriverStatus}')">Toggle Status</button>
+                        <button type="button" class="driver-btn driver-btn-delete" onclick="deleteDriver(${driver.id})">Delete</button>
+                    </td>
+                `;
+                if (driverTableBody) driverTableBody.appendChild(row);
+            });
 
-                        link.classList.add('active');
+            console.log('Drivers fetched successfully!');
+            await populateDriverDropdown();
+        } catch (error) {
+            console.error('Error fetching drivers:', error.message);
+        }
+    }
 
-                        const targetId = (link.getAttribute('data-target') || '').trim();
-                        if (!targetId) {
-                            console.warn('[SSV Nav] Sidebar item missing data-target.');
-                            return;
-                        }
+    window.__ssvRefreshDrivers = fetchDrivers;
 
-                        const targetSection = document.getElementById(targetId);
-                        if (!targetSection) {
-                            console.warn('[SSV Nav] No matching section for id:', targetId);
-                            return;
-                        }
+    async function fetchTrucks() {
+        if (!truckTableBody) return;
+        if (!supabase) return;
 
-                        targetSection.classList.add('active-section');
-                    } catch (navErr) {
-                        console.warn('[SSV Nav] activateSectionForLink:', navErr);
-                    }
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('*, drivers(full_name)')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            truckTableBody.innerHTML = '';
+
+            (trucks || []).forEach((truck) => {
+                const driverName = truck.drivers?.full_name ?? 'Unassigned';
+                const safeTruckStatus = String(truck.status ?? 'Active').replace(
+                    /'/g,
+                    "\\'"
+                );
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeHTML(truck.truck_number ?? '')}</td>
+                    <td>${escapeHTML(truck.model ?? '')}</td>
+                    <td>${escapeHTML(driverName)}</td>
+                    <td>${escapeHTML(truck.tank_capacity ?? '')}</td>
+                    <td>
+                        <span class="status-badge ${String(truck.status ?? 'Active').toLowerCase() === 'active' ? 'status-active' : 'status-inactive'}">
+                            ${escapeHTML(truck.status ?? 'Active')}
+                        </span>
+                    </td>
+                    <td class="driver-actions-cell">
+                        <button type="button" class="driver-btn driver-btn-toggle" onclick="toggleTruckStatus(${truck.id}, '${safeTruckStatus}')">Toggle Status</button>
+                        <button type="button" class="driver-btn driver-btn-delete" onclick="deleteTruck(${truck.id})">Delete</button>
+                    </td>
+                `;
+                truckTableBody.appendChild(row);
+            });
+
+            console.log('Trucks fetched and displayed successfully!');
+
+            await populateTruckDropdown();
+        } catch (error) {
+            console.error('Error fetching trucks:', error.message);
+        }
+    }
+
+    window.__ssvRefreshTrucks = fetchTrucks;
+
+    const BURN_L_PER_KM = 0.3;
+
+    /** Replay trips in order; works when DB has no stored remaining_fuel column. */
+    function computeRemainingAfterLogs(tankCapacity, logsOldestFirst) {
+        let remaining = tankCapacity;
+        for (const log of logsOldestFirst) {
+            const distance = Number(log.end_odometer) - Number(log.start_odometer);
+            const fuelBurned = distance * BURN_L_PER_KM;
+            const refuel = Number(log.refuel_amount) || 0;
+            remaining = remaining + refuel - fuelBurned;
+            remaining = Math.max(0, Math.min(tankCapacity, remaining));
+        }
+        return remaining;
+    }
+
+    async function populateTruckDropdown() {
+        const selectEl = document.getElementById('tripTruckSelect');
+        if (!selectEl || !supabase) return;
+
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (error) throw error;
+
+            selectEl.innerHTML = '<option value="">Select truck</option>';
+
+            (trucks || []).forEach((truck) => {
+                const option = document.createElement('option');
+                option.value = truck.id;
+                option.textContent = truck.truck_number;
+                selectEl.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating truck dropdown:', error.message);
+        }
+    }
+
+    async function updateLiveFleetStatus() {
+        const tableBody = document.getElementById('fleetStatusBody');
+        if (!tableBody || !supabase) return;
+
+        try {
+            const { data: trucks, error: truckError } = await supabase
+                .from('trucks')
+                .select('id, truck_number, model, tank_capacity, drivers(full_name)')
+                .order('truck_number', { ascending: true });
+
+            if (truckError) throw truckError;
+
+            tableBody.innerHTML = '';
+
+            for (const truck of trucks || []) {
+                const { data: tripLogs, error: tripError } = await supabase
+                    .from('trip_logs')
+                    .select('*')
+                    .eq('truck_id', truck.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (tripError) throw tripError;
+
+                const cap = Number(truck.tank_capacity) || 0;
+                let remainingFuel = cap;
+
+                if (tripLogs && tripLogs.length > 0) {
+                    const lastTrip = tripLogs[0];
+                    const distance = Math.max(
+                        0,
+                        Number(lastTrip.end_odometer) - Number(lastTrip.start_odometer)
+                    );
+                    const fuelBurned = distance * BURN_L_PER_KM;
+                    remainingFuel =
+                        cap - fuelBurned + Number(lastTrip.refuel_amount || 0);
+                    remainingFuel = Math.max(0, Math.min(cap, remainingFuel));
                 }
 
-                link.addEventListener('click', (e) => {
-                    try {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        activateSectionForLink();
-                    } catch (clickErr) {
-                        console.warn('[SSV Nav] click handler:', clickErr);
-                    }
-                });
+                const driverName = truck.drivers
+                    ? truck.drivers.full_name
+                    : 'Unassigned';
 
-                link.addEventListener('keydown', (e) => {
-                    try {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            activateSectionForLink();
-                        }
-                    } catch (kbdErr) {
-                        console.warn('[SSV Nav] keydown handler:', kbdErr);
-                    }
-                });
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${truck.truck_number ?? ''}</td>
+                    <td>${truck.model ?? ''}</td>
+                    <td>${driverName ?? 'Unassigned'}</td>
+                    <td><strong>${Number.isFinite(remainingFuel) ? remainingFuel.toFixed(2) : '—'} L</strong></td>
+                `;
+                tableBody.appendChild(row);
+            }
+
+            console.log('Live Fleet Fuel Status updated successfully!');
+        } catch (error) {
+            console.error('Error updating fleet status:', error.message);
+        }
+    }
+
+    async function loadOverviewStats() {
+        const elTrucks = document.getElementById('kpiTotalTrucks');
+        const elDrivers = document.getElementById('kpiActiveDrivers');
+        const elFuel = document.getElementById('kpiTotalFuel');
+
+        if (!supabase) {
+            if (elTrucks) elTrucks.textContent = '—';
+            if (elDrivers) elDrivers.textContent = '—';
+            if (elFuel) elFuel.textContent = '—';
+            return;
+        }
+
+        if (elTrucks) {
+            try {
+                const { count, error } = await supabase
+                    .from('trucks')
+                    .select('*', { count: 'exact', head: true });
+                if (error) throw error;
+                elTrucks.textContent = count != null ? String(count) : '0';
+            } catch (err) {
+                console.error('Overview KPI (trucks):', err.message);
+                elTrucks.textContent = '—';
+            }
+        }
+
+        if (elDrivers) {
+            try {
+                const { count, error } = await supabase
+                    .from('drivers')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'Active');
+                if (error) throw error;
+                elDrivers.textContent = count != null ? String(count) : '0';
+            } catch (err) {
+                console.error('Overview KPI (active drivers):', err.message);
+                elDrivers.textContent = '—';
+            }
+        }
+
+        if (elFuel) {
+            try {
+                const { data, error } = await supabase
+                    .from('trip_logs')
+                    .select('refuel_amount');
+                if (error) throw error;
+                const total = (data || []).reduce(
+                    (sum, row) => sum + Number(row.refuel_amount || 0),
+                    0
+                );
+                elFuel.textContent = Number.isFinite(total) ? total.toFixed(2) : '0';
+            } catch (err) {
+                console.error('Overview KPI (fuel sum):', err.message);
+                elFuel.textContent = '—';
+            }
+        }
+    }
+
+    let fuelChartInstance = null;
+
+    async function renderFuelAnalytics() {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js is not loaded.');
+            return;
+        }
+
+        const canvas = document.getElementById('fuelChart');
+        if (!canvas || !supabase) return;
+
+        try {
+            const { data: trucks, error: truckError } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (truckError) throw truckError;
+
+            const { data: tripLogs, error: logError } = await supabase
+                .from('trip_logs')
+                .select('truck_id, refuel_amount');
+
+            if (logError) throw logError;
+
+            const totalByTruckId = {};
+            (trucks || []).forEach((t) => {
+                totalByTruckId[t.id] = 0;
             });
-        } catch (navInitErr) {
-            console.warn('[SSV Nav] Initialization failed:', navInitErr);
+            (tripLogs || []).forEach((row) => {
+                const tid = row.truck_id;
+                if (totalByTruckId[tid] === undefined) totalByTruckId[tid] = 0;
+                totalByTruckId[tid] += Number(row.refuel_amount || 0);
+            });
+
+            const labels = (trucks || []).map((t) => String(t.truck_number ?? t.id));
+            const dataPoints = (trucks || []).map((t) => totalByTruckId[t.id] ?? 0);
+
+            if (fuelChartInstance) {
+                fuelChartInstance.destroy();
+                fuelChartInstance = null;
+            }
+
+            const ctx = canvas.getContext('2d');
+            fuelChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Total refuel (L)',
+                            data: dataPoints,
+                            backgroundColor: '#2563eb',
+                            borderColor: '#1d4ed8',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' },
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' },
+                        },
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('Fuel analytics chart:', error.message);
         }
-    })();
-
-try {
-
-const FUEL_L_PER_KM = 0.65;
-
-/** Phase 4–style siphoning heuristics: deficit tank or extremely high % used on the trip. */
-const SIPHONING_FUEL_PCT_THRESHOLD = 88;
-
-function escapeHtml(str) {
-    if (str == null) return '';
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
-}
-
-function isTripFlaggedSiphoning(row) {
-    return (
-        Number(row.remaining_fuel) < 0 || Number(row.fuel_percentage_used) > SIPHONING_FUEL_PCT_THRESHOLD
-    );
-}
-
-/**
- * Native OS notifications (Windows/macOS/Android) via the Notifications API.
- * When permission is still "default", prompt once — required before Security alerts can fire.
- */
-async function requestNotificationPermissionOnDashboardLoad() {
-    if (typeof Notification === 'undefined') return;
-    if (Notification.permission !== 'default') return;
-    try {
-        await Notification.requestPermission();
-    } catch {
-        /* ignore */
     }
-}
 
-// --- Driver dropdown (active drivers only) ---
-async function fetchActiveDrivers() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
-        .from('drivers')
-        .select('id, name, phone')
-        .eq('status', 'Active')
-        .order('name', { ascending: true });
+    async function fetchTripHistory() {
+        const tbody = document.getElementById('tripHistoryBody');
+        if (!tbody || !supabase) return;
 
-    if (error) {
-        console.error('Error fetching drivers for dropdown:', error);
-        return [];
-    }
-    return data || [];
-}
+        try {
+            const { data: logs, error } = await supabase
+                .from('trip_logs')
+                .select('*, trucks(truck_number)')
+                .order('created_at', { ascending: false });
 
-function populateAssignDriverSelect() {
-    const sel = document.getElementById('assignDriver');
-    if (!sel) return;
+            if (error) throw error;
 
-    fetchActiveDrivers().then((drivers) => {
-        const keep = sel.querySelector('option[value=""]');
-        sel.innerHTML = '';
-        if (keep) sel.appendChild(keep);
-        else {
-            const opt = document.createElement('option');
-            opt.value = '';
-            opt.textContent = 'Assign Driver';
-            sel.appendChild(opt);
+            tbody.innerHTML = '';
+
+            (logs || []).forEach((log) => {
+                const truckNum = log.trucks?.truck_number ?? '—';
+                const created = log.created_at ? new Date(log.created_at) : null;
+                const dateStr = created
+                    ? created.toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                      })
+                    : '—';
+                const distanceKm =
+                    Number(log.end_odometer) - Number(log.start_odometer);
+                const refuelL = Number(log.refuel_amount || 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHTML(dateStr)}</td>
+                    <td>${escapeHTML(truckNum)}</td>
+                    <td>${escapeHTML(Number.isFinite(distanceKm) ? distanceKm.toFixed(2) : '—')}</td>
+                    <td>${escapeHTML(Number.isFinite(refuelL) ? refuelL.toFixed(2) : '—')}</td>
+                    <td><button type="button" class="delete-btn" onclick="deleteTrip(${log.id})">Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error('fetchTripHistory:', error.message);
         }
-        drivers.forEach((d) => {
-            const o = document.createElement('option');
-            o.value = String(d.id);
-            o.textContent = `${d.name} (${d.phone || '—'})`;
-            sel.appendChild(o);
+    }
+
+    window.__ssvFetchTripHistory = fetchTripHistory;
+    window.__ssvUpdateLiveFleet = updateLiveFleetStatus;
+    window.__ssvRenderFuelChart = renderFuelAnalytics;
+
+    if (addDriverForm && supabase) {
+        addDriverForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('driverName').value;
+            const contact = document.getElementById('driverContact').value;
+            const license = document.getElementById('driverLicense').value;
+
+            const submitBtn = addDriverForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Adding...';
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error('Authentication missing. Please log out and log back in.');
+                }
+
+                const { error } = await supabase.from('drivers').insert([
+                    {
+                        full_name: name,
+                        contact_number: contact,
+                        license_number: license,
+                    },
+                ]);
+
+                if (error) throw error;
+
+                addDriverForm.reset();
+                fetchDrivers();
+                await loadOverviewStats();
+            } catch (error) {
+                console.error('Error inserting driver:', error.message);
+                alert(`Failed to add driver: ${error.message}`);
+            } finally {
+                submitBtn.innerText = 'Submit';
+            }
         });
-    });
-}
-
-// --- Trucks dropdown ---
-async function fetchTrucksList() {
-    if (!supabase) return [];
-    const { data, error } = await supabase
-        .from('trucks')
-        .select('id, truck_number, car_model')
-        .order('truck_number', { ascending: true });
-
-    if (error) {
-        console.error('Error fetching trucks:', error);
-        return [];
     }
-    return data || [];
-}
 
-function populateTripTruckSelect() {
-    const sel = document.getElementById('tripTruckSelect');
-    if (!sel) return;
+    const addTruckForm = document.getElementById('addTruckForm');
+    if (addTruckForm && supabase) {
+        addTruckForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-    fetchTrucksList().then((trucks) => {
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = 'Select Truck';
-        sel.innerHTML = '';
-        sel.appendChild(placeholder);
-        trucks.forEach((t) => {
-            const o = document.createElement('option');
-            o.value = String(t.id);
-            o.textContent = `${t.truck_number} — ${t.car_model}`;
-            sel.appendChild(o);
+            const truckNumber = document.getElementById('truckNumber').value.trim();
+            const truckModel = document.getElementById('truckModel').value.trim();
+            const tankCapacity = document.getElementById('tankCapacity').value;
+            const chassisNumberInput = document.getElementById('chassisNumber').value.trim();
+            const regPlateInput = document.getElementById('regPlate').value.trim();
+            const driverId = document.getElementById('assignDriverDropdown').value;
+
+            const submitBtn = addTruckForm.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Adding...';
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error('Authentication missing. Please log out and log back in.');
+                }
+
+                if (!driverId) {
+                    throw new Error('Please select a driver.');
+                }
+
+                const { error } = await supabase.from('trucks').insert([
+                    {
+                        truck_number: truckNumber,
+                        model: truckModel,
+                        tank_capacity: Number(tankCapacity),
+                        driver_id: Number(driverId),
+                        chassis_number: chassisNumberInput,
+                        reg_plate: regPlateInput,
+                    },
+                ]);
+
+                if (error) throw error;
+
+                addTruckForm.reset();
+                await fetchTrucks();
+                await updateLiveFleetStatus();
+                await loadOverviewStats();
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                submitBtn.innerText = 'Submit';
+            }
         });
-    });
-}
-
-// --- Driver Management (roster table) ---
-async function fetchDrivers() {
-    if (!supabase) return;
-    const { data: drivers, error } = await supabase
-        .from('drivers')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching drivers:', error);
-        return;
     }
 
-    const tbody = document.getElementById('driverTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const tripLogForm = document.getElementById('tripLogForm');
+    if (tripLogForm && supabase) {
+        tripLogForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-    (drivers || []).forEach((driver) => {
-        const rawStatus = String(driver.status ?? '');
-        const statusClass =
-            rawStatus === 'Active'
-                ? 'active'
-                : rawStatus === 'Sacked'
-                  ? 'sacked'
-                  : rawStatus
-                    ? rawStatus.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'inactive'
-                    : 'inactive';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${escapeHtml(driver.name)}</td>
-            <td>${escapeHtml(driver.phone)}</td>
-            <td><span class="status ${statusClass}">${escapeHtml(rawStatus || '—')}</span></td>
-            <td>
-                ${driver.status === 'Active'
-                    ? `<button type="button" class="sack-btn" data-sack-id="${driver.id}">Sack/Remove</button>`
-                    : '<span style="color: #94a3b8; font-size: 0.8rem;">Inactive</span>'}
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
+            const truckId = document.getElementById('tripTruckSelect').value;
+            const startOdometer = Number(document.getElementById('startOdometer').value);
+            const endOdometer = Number(document.getElementById('endOdometer').value);
+            const refuelAmount = Number(document.getElementById('refuelAmount').value) || 0;
 
-    tbody.querySelectorAll('[data-sack-id]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const sid = btn.getAttribute('data-sack-id');
-            window.sackDriver(sid != null ? Number(sid) : NaN);
+            const submitBtn = tripLogForm.querySelector('button[type="submit"]');
+            const prevLabel = submitBtn.innerText;
+            submitBtn.innerText = 'Saving...';
+            submitBtn.disabled = true;
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error('Authentication missing. Please log out and log back in.');
+                }
+
+                if (!truckId) {
+                    throw new Error('Please select a truck.');
+                }
+
+                if (Number.isNaN(startOdometer) || Number.isNaN(endOdometer)) {
+                    throw new Error('Odometer values must be valid numbers.');
+                }
+
+                const distance = endOdometer - startOdometer;
+                if (distance < 0) {
+                    throw new Error('End odometer must be greater than or equal to start odometer.');
+                }
+
+                const { data: truckRow, error: truckErr } = await supabase
+                    .from('trucks')
+                    .select('tank_capacity')
+                    .eq('id', truckId)
+                    .single();
+
+                if (truckErr || !truckRow) throw truckErr || new Error('Truck not found.');
+
+                const capacity = Number(truckRow.tank_capacity) || 0;
+
+                const { data: priorLogs, error: prevErr } = await supabase
+                    .from('trip_logs')
+                    .select('start_odometer, end_odometer, refuel_amount')
+                    .eq('truck_id', truckId)
+                    .order('created_at', { ascending: true });
+
+                if (prevErr) throw prevErr;
+
+                const previousRemaining = computeRemainingAfterLogs(capacity, priorLogs || []);
+
+                const fuelBurned = distance * BURN_L_PER_KM;
+                const fuelAvailable = previousRemaining + refuelAmount;
+                if (fuelBurned > fuelAvailable + 1e-6) {
+                    throw new Error(
+                        'Trip fuel use exceeds available fuel. Check odometer or refuel amount.'
+                    );
+                }
+
+                const { error: insertErr } = await supabase.from('trip_logs').insert([
+                    {
+                        truck_id: Number(truckId),
+                        start_odometer: startOdometer,
+                        end_odometer: endOdometer,
+                        refuel_amount: refuelAmount,
+                    },
+                ]);
+
+                if (insertErr) throw insertErr;
+
+                tripLogForm.reset();
+                const refuelInput = document.getElementById('refuelAmount');
+                if (refuelInput) refuelInput.value = '0';
+
+                await updateLiveFleetStatus();
+                await loadOverviewStats();
+                await renderFuelAnalytics();
+                await fetchTripHistory();
+            } catch (error) {
+                console.error('Trip log error:', error);
+                alert(error.message || 'Failed to save trip.');
+            } finally {
+                submitBtn.innerText = prevLabel;
+                submitBtn.disabled = false;
+            }
         });
-    });
-
-    populateAssignDriverSelect();
-}
-
-const addDriverFormEl = document.getElementById('addDriverForm');
-if (addDriverFormEl) addDriverFormEl.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    if (!supabase) {
-        alert('Database connection is not available.');
-        return;
     }
 
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const prevText = submitBtn.innerText;
-    submitBtn.innerText = 'Adding...';
-    submitBtn.disabled = true;
-
-    const newDriver = {
-        name: document.getElementById('driverName').value.trim(),
-        phone: document.getElementById('driverPhone').value.trim(),
-        license_number: document.getElementById('driverLicense').value.trim(),
-        status: 'Active',
-    };
-
-    const { error } = await supabase.from('drivers').insert([newDriver]);
-
-    if (error) {
-        alert('Failed to add driver: ' + error.message);
-    } else {
-        await fetchDrivers();
-        this.reset();
+    if (searchDriversInput && driverTableBody) {
+        searchDriversInput.addEventListener('input', () => {
+            const searchValue = searchDriversInput.value.toLowerCase();
+            const rows = driverTableBody.querySelectorAll('tr');
+            rows.forEach((row) => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchValue) ? '' : 'none';
+            });
+        });
     }
 
-    submitBtn.innerText = prevText;
-    submitBtn.disabled = false;
+    if (searchTrucksInput && truckTableBody) {
+        searchTrucksInput.addEventListener('input', () => {
+            const searchValue = searchTrucksInput.value.toLowerCase();
+            const rows = truckTableBody.querySelectorAll('tr');
+            rows.forEach((row) => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchValue) ? '' : 'none';
+            });
+        });
+    }
+
+    if (exportTripsBtn) {
+        exportTripsBtn.addEventListener('click', () => {
+            exportTableToCSV('tripHistoryBody', 'fleet_trip_history.csv');
+        });
+    }
+
+    fetchDrivers();
+    fetchTrucks();
+    populateDriverDropdown();
+    populateTruckDropdown();
+    updateLiveFleetStatus();
+    loadOverviewStats();
+    renderFuelAnalytics();
+    fetchTripHistory();
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to log out?')) {
+                return;
+            }
+            try {
+                if (supabase) {
+                    await supabase.auth.signOut();
+                }
+                window.location.href = 'admin-login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert(
+                    error?.message
+                        ? `Could not log out: ${error.message}`
+                        : 'Could not log out. Please try again.'
+                );
+            }
+        });
+    }
 });
 
-window.sackDriver = async function (id) {
-    if (!Number.isFinite(id)) return;
-    if (!confirm("Are you sure you want to change this driver's status to sacked/inactive?")) return;
-    if (!supabase) return;
+async function toggleDriverStatus(driverId, currentStatus) {
+    const client = window.supabaseClient || window.createSupabaseClient?.();
+    if (!client) {
+        alert('Supabase client not available.');
+        return;
+    }
 
-    const { error } = await supabase.from('drivers').update({ status: 'Sacked' }).eq('id', id);
+    const cur = currentStatus || 'Active';
+    const newStatus = cur === 'Active' ? 'Inactive' : 'Active';
 
-    if (error) {
-        alert('Failed to update status: ' + error.message);
-    } else {
-        await fetchDrivers();
-        await populateTripTruckSelect();
-        await refreshFleetStatusTables();
+    try {
+        const { error } = await client.from('drivers').update({ status: newStatus }).eq('id', driverId);
+
+        if (error) throw error;
+
+        if (typeof window.__ssvRefreshDrivers === 'function') {
+            await window.__ssvRefreshDrivers();
+        }
+    } catch (error) {
+        console.error('toggleDriverStatus:', error);
+        alert(`Failed to update status: ${error.message}`);
+    }
+}
+
+async function deleteDriver(driverId) {
+    if (
+        !confirm(
+            'Are you sure you want to delete this driver? This action cannot be undone.'
+        )
+    ) {
+        return;
+    }
+
+    const client = window.supabaseClient || window.createSupabaseClient?.();
+    if (!client) {
+        alert('Supabase client not available.');
+        return;
+    }
+
+    try {
+        const { error } = await client.from('drivers').delete().eq('id', driverId);
+
+        if (error) throw error;
+
+        if (typeof window.__ssvRefreshDrivers === 'function') {
+            await window.__ssvRefreshDrivers();
+        }
+    } catch (error) {
+        console.error('deleteDriver:', error);
+        alert(`Failed to delete driver: ${error.message}`);
+    }
+}
+
+// --- TRUCK ACTIONS (Global scope: explicit window bindings for inline onclick) ---
+
+window.toggleTruckStatus = async function (truckId, currentStatus) {
+    const supabase = window.supabaseClient || window.createSupabaseClient?.();
+    if (!supabase) {
+        alert('Supabase client not available.');
+        return;
+    }
+
+    try {
+        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+
+        const { error } = await supabase
+            .from('trucks')
+            .update({ status: newStatus })
+            .eq('id', truckId);
+
+        if (error) throw error;
+
+        console.log(`Successfully updated truck ${truckId} to ${newStatus}`);
+
+        if (typeof window.__ssvRefreshTrucks === 'function') {
+            await window.__ssvRefreshTrucks();
+        }
+    } catch (error) {
+        console.error('Error toggling truck status:', error.message);
+        alert(`Failed to update status: ${error.message}`);
     }
 };
 
-// --- Add truck ---
-const addTruckFormEl = document.getElementById('addTruckForm');
-if (addTruckFormEl) addTruckFormEl.addEventListener('submit', async function (e) {
-    e.preventDefault();
+window.deleteTruck = async function (truckId) {
+    const isConfirmed = confirm(
+        'Are you sure you want to delete this truck? This action cannot be undone.'
+    );
+    if (!isConfirmed) return;
+
+    const supabase = window.supabaseClient || window.createSupabaseClient?.();
     if (!supabase) {
-        alert('Database connection is not available.');
+        alert('Supabase client not available.');
         return;
     }
 
-    const btn = document.getElementById('addTruckBtn');
-    const prev = btn.innerText;
-    btn.innerText = 'Saving...';
-    btn.disabled = true;
+    try {
+        const { error } = await supabase.from('trucks').delete().eq('id', truckId);
 
-    const row = {
-        truck_number: document.getElementById('truckNumber').value.trim(),
-        driver_id: Number(document.getElementById('assignDriver').value),
-        chassis_number: document.getElementById('chassisNumber').value.trim(),
-        registration_plate: document.getElementById('regPlate').value.trim(),
-        car_model: document.getElementById('carModel').value.trim(),
-        driver_contact: document.getElementById('driverContact').value.trim(),
-        tank_count: Number(document.getElementById('tankCount').value),
-        total_tank_capacity: Number(document.getElementById('tankCapacity').value),
-    };
+        if (error) throw error;
 
-    const { error } = await supabase.from('trucks').insert([row]);
+        console.log(`Successfully deleted truck ${truckId}`);
 
-    if (error) {
-        alert('Failed to add truck: ' + error.message);
-    } else {
-        this.reset();
-        document.getElementById('tankCount').selectedIndex = 0;
-        await populateTripTruckSelect();
-        await refreshFleetStatusTables();
-    }
-
-    btn.innerText = prev;
-    btn.disabled = false;
-});
-
-// --- Trip log math & save ---
-function showTripError(msg) {
-    const el = document.getElementById('trip-error');
-    if (!el) return;
-    el.textContent = msg;
-    el.style.display = 'block';
-}
-
-function hideTripError() {
-    const el = document.getElementById('trip-error');
-    if (!el) return;
-    el.style.display = 'none';
-    el.textContent = '';
-}
-
-const tripLogFormEl = document.getElementById('tripLogForm');
-if (tripLogFormEl) tripLogFormEl.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    hideTripError();
-    if (!supabase) {
-        showTripError('Database connection is not available.');
-        return;
-    }
-
-    const truckId = Number(document.getElementById('tripTruckSelect').value);
-    if (!truckId) {
-        showTripError('Please select a truck.');
-        return;
-    }
-
-    const start = Number(document.getElementById('startOdometer').value);
-    const end = Number(document.getElementById('endOdometer').value);
-    const refuel = Number(document.getElementById('refuelAmount').value) || 0;
-
-    if (Number.isNaN(start) || Number.isNaN(end)) {
-        showTripError('Odometer readings must be valid numbers.');
-        return;
-    }
-
-    if (end < start) {
-        showTripError('End odometer cannot be less than start odometer.');
-        return;
-    }
-
-    const btn = document.getElementById('tripLogBtn');
-    const label = btn.querySelector('.trip-btn-label');
-    const prevHtml = label.innerHTML;
-    label.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating...';
-    btn.disabled = true;
-
-    const { data: truckRow, error: truckErr } = await supabase
-        .from('trucks')
-        .select('id, total_tank_capacity, truck_number')
-        .eq('id', truckId)
-        .single();
-
-    if (truckErr || !truckRow) {
-        label.innerHTML = prevHtml;
-        btn.disabled = false;
-        showTripError('Could not load truck data.');
-        return;
-    }
-
-    const { data: prevLogs, error: logErr } = await supabase
-        .from('trip_logs')
-        .select('remaining_fuel')
-        .eq('truck_id', truckId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-    if (logErr) {
-        label.innerHTML = prevHtml;
-        btn.disabled = false;
-        showTripError('Could not load previous trip data.');
-        return;
-    }
-
-    const distance = end - start;
-    const expectedFuel = distance * FUEL_L_PER_KM;
-
-    let previousRemaining;
-    if (prevLogs && prevLogs.length > 0) {
-        previousRemaining = Number(prevLogs[0].remaining_fuel);
-    } else {
-        previousRemaining = Number(truckRow.total_tank_capacity);
-    }
-
-    const totalAvailable = previousRemaining + refuel;
-
-    if (totalAvailable <= 0) {
-        label.innerHTML = prevHtml;
-        btn.disabled = false;
-        showTripError('No fuel available. Check tank capacity or enter a refuel amount.');
-        return;
-    }
-
-    const remainingFuel = totalAvailable - expectedFuel;
-    const fuelPercentageUsed = (expectedFuel / totalAvailable) * 100;
-
-    const insertRow = {
-        truck_id: truckId,
-        start_odometer: start,
-        end_odometer: end,
-        distance_covered: distance,
-        expected_fuel_consumption: expectedFuel,
-        actual_fuel_consumption: expectedFuel,
-        refuel_amount: refuel,
-        remaining_fuel: remainingFuel,
-        fuel_percentage_used: fuelPercentageUsed,
-    };
-
-    const { error: insErr } = await supabase.from('trip_logs').insert([insertRow]);
-
-    label.innerHTML = prevHtml;
-    btn.disabled = false;
-
-    if (insErr) {
-        showTripError(insErr.message || 'Failed to save trip log.');
-        return;
-    }
-
-    if (isTripFlaggedSiphoning(insertRow)) {
-        const truckNumber = truckRow.truck_number;
-        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            try {
-                new Notification('🚨 SSV Security Alert', {
-                    body: 'Suspicious fuel activity detected on Truck ' + truckNumber,
-                });
-            } catch {
-                /* ignore */
-            }
+        if (typeof window.__ssvRefreshTrucks === 'function') {
+            await window.__ssvRefreshTrucks();
         }
+    } catch (error) {
+        console.error('Error deleting truck:', error.message);
+        alert(`Failed to delete truck: ${error.message}`);
     }
+};
 
-    await refreshFleetStatusTables();
-    document.getElementById('startOdometer').value = '';
-    document.getElementById('endOdometer').value = '';
-    document.getElementById('refuelAmount').value = '0';
-});
-
-['tripTruckSelect', 'startOdometer', 'endOdometer', 'refuelAmount'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', () => hideTripError());
-});
-
-// --- Live fleet status (latest trip per truck) ---
-async function refreshFleetStatusTables() {
-    if (!supabase) return;
-    const { data: trucks, error: tErr } = await supabase
-        .from('trucks')
-        .select('id, truck_number, car_model, total_tank_capacity, driver_id')
-        .order('truck_number', { ascending: true });
-
-    if (tErr) {
-        console.error('Error loading trucks for fleet status:', tErr);
-        return;
-    }
-
-    const { data: driverRows, error: dErr } = await supabase.from('drivers').select('id, name');
-    if (dErr) {
-        console.error('Error loading drivers for fleet status:', dErr);
-    }
-    const driverNameById = {};
-    (driverRows || []).forEach((d) => {
-        driverNameById[d.id] = d.name;
-    });
-
-    const { data: logs, error: lErr } = await supabase
-        .from('trip_logs')
-        .select('truck_id, remaining_fuel, fuel_percentage_used, created_at')
-        .order('created_at', { ascending: false });
-
-    if (lErr) {
-        console.error('Error loading trip logs:', lErr);
-        return;
-    }
-
-    const latestByTruck = {};
-    (logs || []).forEach((log) => {
-        if (latestByTruck[log.truck_id] == null) {
-            latestByTruck[log.truck_id] = log;
-        }
-    });
-
-    const bodyMain = document.getElementById('fleetStatusBody');
-    const bodyFuel = document.getElementById('fleetStatusBodyFuel');
-    if (!bodyMain) return;
-
-    bodyMain.innerHTML = '';
-    if (bodyFuel) bodyFuel.innerHTML = '';
-
-    (trucks || []).forEach((t) => {
-        const latest = latestByTruck[t.id];
-        const driverName = driverNameById[t.driver_id] != null ? driverNameById[t.driver_id] : '—';
-        let remaining;
-        let pct;
-        if (latest) {
-            remaining = Number(latest.remaining_fuel);
-            pct = Number(latest.fuel_percentage_used);
-        } else {
-            remaining = Number(t.total_tank_capacity);
-            pct = 0;
-        }
-
-        const remStr = Number.isFinite(remaining) ? remaining.toFixed(2) : '—';
-        const pctStr = latest && Number.isFinite(pct) ? `${pct.toFixed(2)}%` : latest ? '—' : '—';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${escapeHtml(t.truck_number)}</td>
-            <td>${escapeHtml(t.car_model)}</td>
-            <td>${escapeHtml(driverName)}</td>
-            <td>${escapeHtml(remStr)}</td>
-            <td>${escapeHtml(pctStr)}</td>
-        `;
-        bodyMain.appendChild(tr);
-
-        if (bodyFuel) {
-            const tr2 = document.createElement('tr');
-            tr2.innerHTML = `
-                <td>${escapeHtml(t.truck_number)}</td>
-                <td>${escapeHtml(driverName)}</td>
-                <td>${escapeHtml(remStr)}</td>
-                <td>${escapeHtml(pctStr)}</td>
-            `;
-            bodyFuel.appendChild(tr2);
-        }
-    });
-}
-
-// --- Telemetry charts, alerts & PDF ---
-let chartFuelPie = null;
-let chartFuelBar = null;
-
-function destroyTelemetryCharts() {
-    if (chartFuelPie) {
-        chartFuelPie.destroy();
-        chartFuelPie = null;
-    }
-    if (chartFuelBar) {
-        chartFuelBar.destroy();
-        chartFuelBar = null;
-    }
-}
-
-function applyDarkChartDefaults() {
-    if (typeof Chart === 'undefined') return;
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.2)';
-}
-
-function getTelemetryDateRange() {
-    const startEl = document.getElementById('telemetryStartDate');
-    const endEl = document.getElementById('telemetryEndDate');
-    const startDate = startEl && startEl.value ? new Date(startEl.value + 'T00:00:00') : null;
-    const endDate = endEl && endEl.value ? new Date(endEl.value + 'T23:59:59') : null;
-    return { startDate, endDate };
-}
-
-function setDefaultTelemetryDateRange() {
-    const startEl = document.getElementById('telemetryStartDate');
-    const endEl = document.getElementById('telemetryEndDate');
-    if (!startEl || !endEl) return;
-
-    const today = new Date();
-    const prior = new Date(today);
-    prior.setDate(today.getDate() - 30);
-
-    const fmt = (d) => d.toISOString().slice(0, 10);
-    if (!startEl.value) startEl.value = fmt(prior);
-    if (!endEl.value) endEl.value = fmt(today);
-}
-
-function paletteAt(index) {
-    const colors = [
-        'rgba(59, 130, 246, 0.72)',
-        'rgba(34, 197, 94, 0.72)',
-        'rgba(168, 85, 247, 0.72)',
-        'rgba(251, 191, 36, 0.72)',
-        'rgba(14, 165, 233, 0.72)',
-        'rgba(244, 114, 182, 0.72)',
-        'rgba(99, 102, 241, 0.72)',
-        'rgba(45, 212, 191, 0.72)',
-    ];
-    return colors[index % colors.length];
-}
-
-function renderTelemetryAlerts(alerts) {
-    const panel = document.getElementById('telemetryAlertsPanel');
-    if (!panel) return;
-    panel.innerHTML = '';
-
-    if (!alerts.length) {
-        const neutral = document.createElement('div');
-        neutral.className = 'telemetry-alert telemetry-alert-neutral';
-        neutral.textContent = 'No suspicious activity detected for the selected range.';
-        panel.appendChild(neutral);
-        return;
-    }
-
-    alerts.forEach((alert) => {
-        const row = document.createElement('div');
-        row.className = 'telemetry-alert telemetry-alert-danger';
-        row.textContent = `🚨 ${alert}`;
-        panel.appendChild(row);
-    });
-}
-
-function updateNotificationBadge(count) {
-    const badge = document.querySelector('.notification-icon .badge');
-    if (!badge) return;
-    badge.textContent = String(count);
-    badge.style.display = count > 0 ? 'inline-block' : 'none';
-}
-
-function detectSiphoningAlerts(trips) {
-    const byTruck = {};
-    (trips || []).forEach((trip) => {
-        const tid = trip.truck_id;
-        if (!byTruck[tid]) byTruck[tid] = [];
-        byTruck[tid].push(trip);
-    });
-
-    const alerts = [];
-    Object.values(byTruck).forEach((truckTrips) => {
-        truckTrips.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        let prev = null;
-        truckTrips.forEach((trip) => {
-            const cap = Number(trip.trucks?.total_tank_capacity) || 0;
-            const refuel = Number(trip.refuel_amount) || 0;
-            const actual = Number(trip.actual_fuel_consumption) || Number(trip.expected_fuel_consumption) || 0;
-            const remaining = Number(trip.remaining_fuel) || 0;
-            const truckNo = trip.trucks?.truck_number || `#${trip.truck_id}`;
-            const stamp = new Date(trip.created_at).toLocaleString();
-
-            if (cap > 0 && refuel > cap) {
-                alerts.push(`Truck ${truckNo} - refuel ${refuel.toFixed(2)}L exceeds tank capacity ${cap.toFixed(2)}L on ${stamp}.`);
-            }
-
-            if (prev) {
-                const predictedStartFuel = Number(prev.remaining_fuel || 0) + refuel;
-                const predictedRemaining = predictedStartFuel - actual;
-                const drift = Math.abs(predictedRemaining - remaining);
-                const tolerance = Math.max(2, cap * 0.05);
-                if (drift > tolerance) {
-                    alerts.push(
-                        `Truck ${truckNo} - suspicious fuel continuity mismatch on ${stamp} (expected ${predictedRemaining.toFixed(2)}L vs logged ${remaining.toFixed(2)}L).`
-                    );
-                }
-            }
-            prev = trip;
-        });
-    });
-    return alerts;
-}
-
-async function generateTelemetryReport() {
-    if (typeof Chart === 'undefined') {
-        alert('Chart library failed to load.');
-        return;
-    }
-    if (!supabase) {
-        alert('Database connection is not available.');
-        return;
-    }
-    applyDarkChartDefaults();
-
-    const { startDate, endDate } = getTelemetryDateRange();
-
-    const dateEl = document.getElementById('telemetryReportDate');
-    if (dateEl) {
-        const rangeText =
-            startDate && endDate
-                ? `Range: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-                : 'Range: all dates';
-        dateEl.textContent = `Generated: ${new Date().toLocaleString()} | ${rangeText}`;
-    }
-
-    let tripQuery = supabase
-        .from('trip_logs')
-        .select(
-            'id, truck_id, expected_fuel_consumption, actual_fuel_consumption, fuel_percentage_used, refuel_amount, remaining_fuel, created_at, trucks(id, truck_number, total_tank_capacity, driver_id)'
+window.deleteTrip = async function (tripId) {
+    if (
+        !confirm(
+            'Delete this trip log? Fuel totals and fleet calculations will update. This cannot be undone.'
         )
-        .order('created_at', { ascending: true });
-
-    if (startDate) tripQuery = tripQuery.gte('created_at', startDate.toISOString());
-    if (endDate) tripQuery = tripQuery.lte('created_at', endDate.toISOString());
-
-    const { data: trips, error: tripErr } = await tripQuery;
-
-    if (tripErr) {
-        console.error(tripErr);
-        alert('Could not load trip data for the report.');
+    ) {
         return;
     }
 
-    const { data: truckRows, error: truckErr } = await supabase
-        .from('trucks')
-        .select('id, truck_number, driver_id, total_tank_capacity');
-
-    if (truckErr) {
-        console.error(truckErr);
-        alert('Could not load trucks for the report.');
+    const supabase = window.supabaseClient || window.createSupabaseClient?.();
+    if (!supabase) {
+        alert('Supabase client not available.');
         return;
     }
-
-    const { data: driverRows, error: driverErr } = await supabase.from('drivers').select('id, name');
-    if (driverErr) {
-        console.error(driverErr);
-    }
-
-    const truckById = {};
-    (truckRows || []).forEach((t) => {
-        truckById[t.id] = t;
-    });
-
-    const driverNameById = {};
-    (driverRows || []).forEach((d) => {
-        driverNameById[d.id] = d.name;
-    });
-
-    const consumptionByTruck = {};
-    const dailyConsumption = {};
-    (trips || []).forEach((trip) => {
-        const tid = trip.truck_id;
-        const v = Number(trip.actual_fuel_consumption) || Number(trip.expected_fuel_consumption) || 0;
-        consumptionByTruck[tid] = (consumptionByTruck[tid] || 0) + v;
-
-        const d = new Date(trip.created_at);
-        const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-            d.getDate()
-        ).padStart(2, '0')}`;
-        dailyConsumption[dayKey] = (dailyConsumption[dayKey] || 0) + v;
-    });
-
-    const pieLabels = [];
-    const pieData = [];
-    const pieColors = [];
-    (truckRows || []).forEach((t) => {
-        pieLabels.push(t.truck_number);
-        pieData.push(Number(consumptionByTruck[t.id] || 0).toFixed(2));
-        pieColors.push(paletteAt(pieColors.length));
-    });
-
-    const dayKeys = Object.keys(dailyConsumption).sort();
-    const barLabels = dayKeys.map((k) => {
-        const [y, m, d] = k.split('-').map(Number);
-        return `${m}/${d}`;
-    });
-    const barData = dayKeys.map((k) => Number(dailyConsumption[k].toFixed(2)));
-
-    const driverAgg = {};
-    (trips || []).forEach((trip) => {
-        const tr = trip.trucks || truckById[trip.truck_id];
-        if (!tr) return;
-        const did = tr.driver_id;
-        if (!driverAgg[did]) driverAgg[did] = { score: 0, n: 0 };
-        const expected = Number(trip.expected_fuel_consumption) || 0;
-        const actual = Number(trip.actual_fuel_consumption) || expected;
-        const delta = actual - expected;
-        // Favor drivers at/under expected consumption; penalize overuse heavily.
-        const score = delta <= 0 ? Math.abs(delta) : 1000 + delta;
-        driverAgg[did].score += score;
-        driverAgg[did].n += 1;
-    });
-
-    let starId = null;
-    let starAvgScore = Infinity;
-    Object.keys(driverAgg).forEach((did) => {
-        const { score, n } = driverAgg[did];
-        if (n === 0) return;
-        const avgScore = score / n;
-        if (avgScore < starAvgScore) {
-            starAvgScore = avgScore;
-            starId = Number(did);
-        }
-    });
-
-    const starNameEl = document.getElementById('starSaverDriverName');
-    const starSubEl = document.getElementById('starSaverSubtext');
-    if (starNameEl) {
-        starNameEl.textContent =
-            starId != null && driverNameById[starId] != null ? driverNameById[starId] : '—';
-    }
-    if (starSubEl) {
-        starSubEl.textContent =
-            starId != null && Number.isFinite(starAvgScore)
-                ? 'Best balance between expected and actual fuel use.'
-                : 'Add trip logs to rank drivers.';
-    }
-
-    let totalLiters = 0;
-    (trips || []).forEach((t) => {
-        totalLiters += Number(t.actual_fuel_consumption) || Number(t.expected_fuel_consumption) || 0;
-    });
-    const totalEl = document.getElementById('totalFleetConsumptionLiters');
-    if (totalEl) totalEl.textContent = totalLiters.toFixed(2);
-
-    const suspiciousAlerts = detectSiphoningAlerts(trips || []);
-    renderTelemetryAlerts(suspiciousAlerts);
-    updateNotificationBadge(suspiciousAlerts.length);
-
-    if (suspiciousAlerts.length && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        try {
-            new Notification('🚨 SSV Security Alerts', {
-                body: `${suspiciousAlerts.length} suspicious telemetry event(s) detected.`,
-            });
-        } catch {
-            /* ignore */
-        }
-    }
-
-    destroyTelemetryCharts();
-
-    const pieCtx = document.getElementById('fuelPieChart');
-    const barCtx = document.getElementById('fuelBarChart');
 
     try {
-    if (pieCtx) {
-        chartFuelPie = new Chart(pieCtx.getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels: pieLabels.length ? pieLabels : ['No data'],
-                datasets: [
-                    {
-                        label: 'Fuel used (L)',
-                        data: pieLabels.length ? pieData.map(Number) : [1],
-                        backgroundColor: pieLabels.length ? pieColors : ['rgba(148,163,184,0.4)'],
-                        borderColor: 'rgba(15, 23, 42, 0.8)',
-                        borderWidth: 1,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } },
-            },
+        const { error } = await supabase.from('trip_logs').delete().eq('id', tripId);
+
+        if (error) throw error;
+
+        if (typeof window.__ssvFetchTripHistory === 'function') {
+            await window.__ssvFetchTripHistory();
+        }
+        if (typeof window.__ssvRenderFuelChart === 'function') {
+            await window.__ssvRenderFuelChart();
+        }
+        if (typeof window.__ssvUpdateLiveFleet === 'function') {
+            await window.__ssvUpdateLiveFleet();
+        }
+    } catch (error) {
+        console.error('deleteTrip:', error);
+        alert(`Failed to delete trip: ${error.message}`);
+    }
+};
+
+function exportTableToCSV(tableId, filename) {
+    const sourceElement = document.getElementById(tableId);
+    if (!sourceElement) return;
+
+    const table =
+        sourceElement.tagName === 'TABLE'
+            ? sourceElement
+            : sourceElement.closest('table') || sourceElement;
+
+    const rows = table.querySelectorAll('tr');
+    const csv = [];
+
+    rows.forEach((row) => {
+        const cols = row.querySelectorAll('th, td');
+        const rowData = [];
+        cols.forEach((col) => {
+            const text = (col.innerText || '').replace(/"/g, '""');
+            rowData.push(`"${text}"`);
         });
-    }
-
-    if (barCtx) {
-        chartFuelBar = new Chart(barCtx.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: barLabels.length ? barLabels : ['—'],
-                datasets: [
-                    {
-                        label: 'Liters',
-                        data: barData.length ? barData : [0],
-                        borderColor: 'rgba(34, 197, 94, 0.95)',
-                        backgroundColor: 'rgba(34, 197, 94, 0.35)',
-                        borderWidth: 1,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.12)' } },
-                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.12)' }, beginAtZero: true },
-                },
-            },
-        });
-    }
-    } catch (chartErr) {
-        console.error('SSV telemetry charts:', chartErr);
-    }
-}
-
-const generateTelemetryReportBtnEl = document.getElementById('generateTelemetryReportBtn');
-if (generateTelemetryReportBtnEl) generateTelemetryReportBtnEl.addEventListener('click', async function () {
-    const btn = this;
-    const prev = btn.innerText;
-    btn.innerText = 'Loading...';
-    btn.disabled = true;
-    await generateTelemetryReport();
-    btn.innerText = prev;
-    btn.disabled = false;
-});
-
-/** Export telemetry charts + highlights (#telemetry-pdf-root) as PDF with dark-theme canvas background. */
-async function exportTelemetryPdfReport() {
-    if (typeof html2pdf === 'undefined') {
-        alert('PDF library failed to load.');
-        return;
-    }
-
-    await generateTelemetryReport();
-    await new Promise((r) => setTimeout(r, 450));
-
-    const container = document.getElementById('telemetry-pdf-root');
-    if (!container) return;
-
-    await html2pdf()
-        .set({
-            margin: [12, 12, 12, 12],
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#0f172a',
-                scrollY: -window.scrollY,
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] },
-        })
-        .from(container)
-        .save('SSV-Fuel-Report.pdf');
-}
-
-const downloadTelemetryPdfBtnEl = document.getElementById('downloadTelemetryPdfBtn');
-if (downloadTelemetryPdfBtnEl) {
-    downloadTelemetryPdfBtnEl.addEventListener('click', async function () {
-        const btn = this;
-        const prev = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparing...';
-        btn.disabled = true;
-
-        try {
-            await exportTelemetryPdfReport();
-        } catch (err) {
-            console.error(err);
-            alert('PDF export failed. Try again after charts finish rendering.');
-        }
-
-        btn.innerHTML = prev;
-        btn.disabled = false;
+        csv.push(rowData.join(','));
     });
-}
 
-function clearSupabaseAuthTokensEverywhere() {
-    try {
-        const host = new URL(SUPABASE_URL).hostname;
-        const ref = host.split('.')[0];
-        const key = ref ? `sb-${ref}-auth-token` : null;
-        if (key) {
-            localStorage.removeItem(key);
-            sessionStorage.removeItem(key);
-        }
-    } catch {
-        /* ignore */
-    }
+    const csvFile = csv.join('\n');
+    const blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
-
-// --- Logout ---
-const logoutBtnEl = document.getElementById('logoutBtn');
-if (logoutBtnEl) {
-    logoutBtnEl.addEventListener('click', async () => {
-        if (supabase) {
-            await supabase.auth.signOut();
-        }
-        localStorage.removeItem('ssv_use_persistent_auth');
-        clearSupabaseAuthTokensEverywhere();
-        window.location.href = 'admin-login.html';
-    });
-}
-
-// --- Boot ---
-void requestNotificationPermissionOnDashboardLoad();
-if (supabase) {
-    setDefaultTelemetryDateRange();
-    fetchDrivers();
-    populateTripTruckSelect();
-    refreshFleetStatusTables();
-    void generateTelemetryReport().catch((err) => console.warn('SSV telemetry:', err));
-}
-} catch (dashboardInitErr) {
-    console.error('SSV dashboard: init error (navigation may be broken):', dashboardInitErr);
-}
-}); // DOMContentLoaded

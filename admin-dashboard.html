@@ -3,92 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="application-name" content="SSV Venture Fleet Management">
-    <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
-    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
-    <title>SSV Venture Fleet Management</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="admin-auth-storage.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <!-- PDF export (Fuel Analytics) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>SSV Fleet Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="admin-dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="dashboard-body">
-
     <nav class="sidebar">
-        <div class="sidebar-header">
-            <img src="logo.png" alt="SSV Logo" class="dash-logo">
-            <h3>SSV Fleet</h3>
+        <div class="logo-block">
+            <div class="logo-placeholder">SSV</div>
+            <h2>Fleet Admin</h2>
         </div>
-        <!-- data-target must equal <section id="..."> in main (dashboard-section, driver-section, truck-section, telemetry-section) -->
+
         <ul class="nav-links">
-            <li data-target="dashboard-section" role="button" tabindex="0"><i class="fa-solid fa-chart-pie"></i> Overview</li>
-            <li class="active" data-target="driver-section" role="button" tabindex="0"><i class="fa-solid fa-users"></i> Driver Management</li>
-            <li data-target="truck-section" role="button" tabindex="0"><i class="fa-solid fa-truck-moving"></i> Truck Fleet</li>
-            <li data-target="telemetry-section" role="button" tabindex="0"><i class="fa-solid fa-gas-pump"></i> Fuel Analytics</li>
+            <li class="nav-item active" data-target="overview-section">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Overview</span>
+            </li>
+            <li class="nav-item" data-target="driver-section">
+                <i class="fa-solid fa-users"></i>
+                <span>Driver Management</span>
+            </li>
+            <li class="nav-item" data-target="truck-section">
+                <i class="fa-solid fa-truck"></i>
+                <span>Truck Fleet</span>
+            </li>
+            <li class="nav-item" data-target="fuel-section">
+                <i class="fa-solid fa-gas-pump"></i>
+                <span>Fuel Analytics</span>
+            </li>
         </ul>
-        <button id="logoutBtn" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+
+        <button id="logoutBtn" class="logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </button>
     </nav>
 
     <main class="main-content">
-        <!-- Sections: id must match sidebar <li data-target> exactly -->
         <header class="top-header">
-            <h2>Welcome, Admin</h2>
-            <div class="header-actions">
-                <div class="notification-icon">
+            <h1>Welcome, Admin</h1>
+            <div class="header-tools">
+                <button id="notificationBtn" class="notification-btn" type="button" aria-label="Notifications">
                     <i class="fa-regular fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
-                <div class="admin-profile">
-                    <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+                    <span id="notificationBadge" class="badge">3</span>
+                </button>
+                <div class="avatar" aria-label="Admin profile">
+                    <i class="fa-solid fa-user"></i>
                 </div>
             </div>
         </header>
 
-        <section id="dashboard-section" class="content-section">
-            <div class="section-header">
-                <h3>Overview</h3>
-                <p>Fleet operations snapshot — use the sidebar to manage drivers, trucks, and fuel.</p>
-            </div>
-            <div class="dashboard-grid overview-grid">
-                <div class="glass-card">
-                    <h4><i class="fa-solid fa-gauge-high"></i> Quick start</h4>
-                    <p class="muted-text">Register drivers, add trucks, then log trips under <strong>Truck Fleet</strong> to track fuel from odometer readings and refuels.</p>
+        <section id="overview-section" class="content-section active">
+            <div class="overview-inner">
+                <div class="overview-kpi-grid">
+                    <article class="kpi-card kpi-card-trucks">
+                        <div class="kpi-card-accent" aria-hidden="true"></div>
+                        <div class="kpi-card-head">
+                            <span class="kpi-icon-wrap" aria-hidden="true"><i class="fa-solid fa-truck"></i></span>
+                            <h3 class="kpi-title">Total Trucks</h3>
+                        </div>
+                        <p class="kpi-value"><span id="kpiTotalTrucks">—</span></p>
+                    </article>
+                    <article class="kpi-card kpi-card-drivers">
+                        <div class="kpi-card-accent kpi-accent-emerald" aria-hidden="true"></div>
+                        <div class="kpi-card-head">
+                            <span class="kpi-icon-wrap kpi-icon-emerald" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
+                            <h3 class="kpi-title">Active Drivers</h3>
+                        </div>
+                        <p class="kpi-value"><span id="kpiActiveDrivers">—</span></p>
+                    </article>
+                    <article class="kpi-card kpi-card-fuel">
+                        <div class="kpi-card-accent kpi-accent-amber" aria-hidden="true"></div>
+                        <div class="kpi-card-head">
+                            <span class="kpi-icon-wrap kpi-icon-amber" aria-hidden="true"><i class="fa-solid fa-droplet"></i></span>
+                            <h3 class="kpi-title">Total Fuel Logged (L)</h3>
+                        </div>
+                        <p class="kpi-value"><span id="kpiTotalFuel">—</span></p>
+                    </article>
                 </div>
             </div>
         </section>
-
-        <section id="driver-section" class="content-section active-section">
-            <div class="section-header">
-                <h3>Driver Roster</h3>
-                <p>Manage active and inactive drivers for the SSV fleet.</p>
-            </div>
-
-            <div class="dashboard-grid">
-                <div class="glass-card">
-                    <h4><i class="fa-solid fa-user-plus"></i> Onboard New Driver</h4>
-                    <form id="addDriverForm">
-                        <div class="input-group">
-                            <input type="text" id="driverName" placeholder="Full Name" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="driverPhone" placeholder="Contact Number" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="driverLicense" placeholder="License Number" required>
-                        </div>
-                        <button type="submit" class="action-btn">Submit</button>
+        <section id="driver-section" class="content-section">
+            <div class="driver-grid">
+                <article class="driver-card">
+                    <h3>Onboard New Driver</h3>
+                    <form id="addDriverForm" class="driver-form">
+                        <input type="text" id="driverName" placeholder="Full Name" required>
+                        <input type="text" id="driverContact" placeholder="Contact Number" required>
+                        <input type="text" id="driverLicense" placeholder="License Number" required>
+                        <button type="submit">Submit</button>
                     </form>
-                </div>
+                </article>
 
-                <div class="glass-card driver-list-card">
-                    <h4><i class="fa-solid fa-address-book"></i> Active Drivers</h4>
-                    <div class="table-container">
-                        <table id="driverTable">
+                <article class="driver-card">
+                    <h3>Active Drivers</h3>
+                    <input type="text" id="searchDrivers" placeholder="Search drivers by name..." class="search-input">
+                    <div class="table-wrap">
+                        <table class="driver-table">
                             <thead>
                                 <tr>
                                     <th>Name</th>
@@ -97,185 +110,125 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="driverTableBody">
-                                </tbody>
+                            <tbody id="driverTableBody"></tbody>
                         </table>
                     </div>
-                </div>
+                </article>
             </div>
         </section>
-
         <section id="truck-section" class="content-section">
-            <div class="section-header">
-                <h3>Truck Fleet &amp; Fuel</h3>
-                <p>Register vehicles, log trips, and monitor live fuel status from the latest trip data.</p>
+            <div class="driver-grid">
+                <article class="driver-card">
+                    <h3>Register New Truck</h3>
+                    <form id="addTruckForm" class="driver-form">
+                        <input type="text" id="truckNumber" placeholder="Truck #" required>
+                        <input type="text" id="truckModel" placeholder="Model" required>
+                        <input type="number" id="tankCapacity" placeholder="Capacity (L)" min="0" step="0.01" required>
+                        <input type="text" id="chassisNumber" placeholder="Chassis number" required>
+                        <input type="text" id="regPlate" placeholder="Registration plate" required>
+                        <select id="assignDriverDropdown" required>
+                            <option value="">Select driver</option>
+                        </select>
+                        <button type="submit">Submit</button>
+                    </form>
+                </article>
+
+                <article class="driver-card">
+                    <h3>Active Fleet</h3>
+                    <input type="text" id="searchTrucks" placeholder="Search trucks by number or model..." class="search-input">
+                    <div class="table-wrap">
+                        <table class="driver-table">
+                            <thead>
+                                <tr>
+                                    <th>Truck #</th>
+                                    <th>Model</th>
+                                    <th>Assigned Driver</th>
+                                    <th>Capacity (L)</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="truckTableBody">
+                                <!-- Trucks will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
             </div>
 
-            <div class="truck-top-grid">
-                <div class="glass-card">
-                    <h4><i class="fa-solid fa-truck-front"></i> Add Truck</h4>
-                    <form id="addTruckForm">
-                        <div class="input-group">
-                            <input type="text" id="truckNumber" placeholder="Truck Number" required>
-                        </div>
-                        <div class="input-group">
-                            <select id="assignDriver" required aria-label="Assign driver">
-                                <option value="">Assign Driver</option>
+            <div class="truck-extra-wide">
+                <div class="driver-grid">
+                    <article class="driver-card">
+                        <h3>Log Trip &amp; Refuel</h3>
+                        <form id="tripLogForm" class="driver-form">
+                            <select id="tripTruckSelect" required>
+                                <option value="">Select truck</option>
                             </select>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="chassisNumber" placeholder="Chassis Number" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="regPlate" placeholder="Registration Plate" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="carModel" placeholder="Model" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="text" id="driverContact" placeholder="Driver Contact" required>
-                        </div>
-                        <div class="input-group">
-                            <select id="tankCount" required aria-label="Number of tanks">
-                                <option value="">Number of Tanks</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="tankCapacity" placeholder="Total Tank Capacity (Liters)" min="0.01" step="0.01" required>
-                        </div>
-                        <button type="submit" class="action-btn" id="addTruckBtn">Register Truck</button>
-                    </form>
-                </div>
+                            <input type="number" id="startOdometer" placeholder="Start odometer (km)" min="0" step="0.01" required>
+                            <input type="number" id="endOdometer" placeholder="End odometer (km)" min="0" step="0.01" required>
+                            <input type="number" id="refuelAmount" placeholder="Refuel (L)" min="0" step="0.01" value="0">
+                            <button type="submit">Save Trip</button>
+                        </form>
+                    </article>
 
-                <div class="glass-card">
-                    <h4><i class="fa-solid fa-route"></i> Trip &amp; Fuel Log</h4>
-                    <div id="trip-error" class="inline-error" style="display: none;" role="alert"></div>
-                    <form id="tripLogForm">
-                        <div class="input-group">
-                            <select id="tripTruckSelect" required aria-label="Select truck">
-                                <option value="">Select Truck</option>
-                            </select>
+                    <article class="driver-card">
+                        <h3>Live Fleet Fuel Status</h3>
+                        <div class="table-wrap">
+                            <table class="driver-table">
+                                <thead>
+                                    <tr>
+                                        <th>Truck #</th>
+                                        <th>Model</th>
+                                        <th>Driver</th>
+                                        <th>Remaining Fuel (L)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fleetStatusBody">
+                                    <!-- Rows will go here -->
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="input-group">
-                            <input type="number" id="startOdometer" placeholder="Start Odometer (KM)" min="0" step="0.01" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="endOdometer" placeholder="End Odometer (KM)" min="0" step="0.01" required>
-                        </div>
-                        <div class="input-group">
-                            <input type="number" id="refuelAmount" placeholder="Refuel Amount (Liters)" min="0" step="0.01" value="0">
-                        </div>
-                        <button type="submit" class="action-btn action-btn-accent" id="tripLogBtn">
-                            <span class="trip-btn-label"><i class="fa-solid fa-calculator"></i> Analyze &amp; Save</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="glass-card fleet-status-card">
-                <h4><i class="fa-solid fa-table"></i> Live Fleet Status</h4>
-                <p class="muted-text fleet-hint">Fuel figures reflect the most recent trip log per truck. New trucks show full tank capacity until the first trip is saved.</p>
-                <div class="table-container">
-                    <table id="fleetStatusTable">
-                        <thead>
-                            <tr>
-                                <th>Truck #</th>
-                                <th>Model</th>
-                                <th>Driver</th>
-                                <th>Remaining Fuel (L)</th>
-                                <th>Fuel % Used (last trip)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fleetStatusBody"></tbody>
-                    </table>
+                    </article>
                 </div>
             </div>
         </section>
-
-        <section id="telemetry-section" class="content-section">
-            <div class="section-header">
-                <h3>Fuel Analytics</h3>
-                <p>Telemetry charts, efficiency highlights, and exportable reports — synced with trip logs.</p>
+        <section id="fuel-section" class="content-section">
+            <div class="fuel-analytics-wrap">
+                <article class="driver-card fuel-analytics-card">
+                    <h3>Total Fuel Consumption per Truck</h3>
+                    <p class="fuel-analytics-hint">Sum of refuel amounts logged per truck (liters).</p>
+                    <div class="fuel-chart-canvas-wrap">
+                        <canvas id="fuelChart" aria-label="Bar chart of fuel per truck"></canvas>
+                    </div>
+                </article>
             </div>
-
-            <div class="glass-card telemetry-top-bar" role="toolbar" aria-label="Telemetry report actions">
-                <div class="telemetry-filter-row">
-                    <div class="date-filter-group">
-                        <label for="telemetryStartDate">Start Date</label>
-                        <input type="date" id="telemetryStartDate" aria-label="Start date filter">
+            <div class="fuel-analytics-wrap trip-history-wrap">
+                <article class="driver-card fuel-analytics-card">
+                    <div class="trip-history-header">
+                        <h3>Recent Trip Logs</h3>
+                        <button id="exportTripsBtn" class="action-btn" type="button">Download CSV</button>
                     </div>
-                    <div class="date-filter-group">
-                        <label for="telemetryEndDate">End Date</label>
-                        <input type="date" id="telemetryEndDate" aria-label="End date filter">
+                    <div class="table-wrap">
+                        <table class="driver-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Truck #</th>
+                                    <th>Distance (km)</th>
+                                    <th>Refuel (L)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tripHistoryBody"></tbody>
+                        </table>
                     </div>
-                    <button type="button" class="action-btn telemetry-generate-btn" id="generateTelemetryReportBtn">Generate Report</button>
-                    <button type="button" class="action-btn action-btn-secondary telemetry-pdf-btn" id="downloadTelemetryPdfBtn" aria-label="Download PDF report">
-                        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
-                    </button>
-                </div>
-            </div>
-
-            <div id="telemetry-pdf-root" class="telemetry-pdf-root glass-card">
-                <div class="pdf-export-header">
-                    <h3>SSV Venture Fleet — Fuel Telemetry</h3>
-                    <p class="pdf-export-meta" id="telemetryReportDate"></p>
-                </div>
-                <div class="telemetry-charts-grid">
-                    <div class="telemetry-chart-card">
-                        <h4><i class="fa-solid fa-chart-pie"></i> Fuel Share by Truck</h4>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="fuelPieChart" aria-label="Fuel consumption pie chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="telemetry-chart-card">
-                        <h4><i class="fa-solid fa-chart-column"></i> Daily Fuel Consumption (L)</h4>
-                        <div class="chart-canvas-wrap">
-                            <canvas id="fuelBarChart" aria-label="Daily fuel consumption bar chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="telemetry-highlights">
-                    <div class="glass-card pdf-highlight-card">
-                        <h4><i class="fa-solid fa-star"></i> Star Saver Driver</h4>
-                        <p class="highlight-value" id="starSaverDriverName">—</p>
-                        <p class="highlight-sub muted-text" id="starSaverSubtext"></p>
-                    </div>
-                    <div class="glass-card pdf-highlight-card">
-                        <h4><i class="fa-solid fa-droplet"></i> Total Fleet Consumption</h4>
-                        <p class="highlight-value"><span id="totalFleetConsumptionLiters">0</span> L</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-card telemetry-table-card">
-                <h4><i class="fa-solid fa-table"></i> Live fuel snapshot</h4>
-                <div class="table-container">
-                    <table id="fleetStatusTableFuel">
-                        <thead>
-                            <tr>
-                                <th>Truck #</th>
-                                <th>Driver</th>
-                                <th>Remaining Fuel (L)</th>
-                                <th>Fuel % Used</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fleetStatusBodyFuel"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="glass-card telemetry-alerts-card">
-                <h4><i class="fa-solid fa-triangle-exclamation"></i> Security &amp; Siphoning Alerts</h4>
-                <div id="telemetryAlertsPanel" class="telemetry-alerts-list">
-                    <div class="telemetry-alert telemetry-alert-neutral">No suspicious activity detected for the selected range.</div>
-                </div>
+                </article>
             </div>
         </section>
     </main>
 
-    <!-- Sidebar navigation, Supabase data, Chart.js telemetry, html2pdf export -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="admin-dashboard.js"></script>
 </body>
 </html>

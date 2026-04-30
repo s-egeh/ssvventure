@@ -3,65 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="favicon.ico?v=2">
-    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico?v=2">
-    <title>SSV Venture Fleet Management — Admin Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    <script src="admin-auth-storage.js"></script>
-    <script src="supabase-config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Admin Login</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="admin-login.css">
 </head>
 <body>
-    <div class="bg-shape shape1"></div>
-    <div class="bg-shape shape2"></div>
-    <div class="bg-shape shape3"></div>
-
-    <div class="login-container">
-        <div class="glass-panel">
-            <div class="logo-container">
-                <img src="logo.png" alt="SSV Venture Logo" class="logo">
+    <main class="login-shell">
+        <section class="login-brand-panel" aria-hidden="true">
+            <div class="brand-content">
+                <div class="brand-pill">SSV Venture Secure Portal</div>
+                <h1>Fleet Intelligence,<br>Secure Access</h1>
+                <p>Centralized control for drivers, trucks, trips, and analytics.</p>
             </div>
-            <h2>Admin Secure Portal</h2>
-            <p class="subtitle">Fleet & Telemetry Management</p>
+        </section>
 
-            <div id="error-message" class="error-message" style="display: none;" role="alert"></div>
-            <div id="success-message" class="success-message" style="display: none;" role="status" aria-live="polite"></div>
+        <section class="login-form-panel">
+            <div class="card">
+                <h2>Admin Login</h2>
+                <p class="subtext">Sign in to continue.</p>
 
-            <form id="adminLoginForm">
-                <div class="input-group">
-                    <i class="fa-solid fa-envelope icon"></i>
-                    <input type="email" id="email" required placeholder="Admin Email" autocomplete="off">
-                </div>
+                <div id="errorBox" class="msg error" role="alert"></div>
+                <div id="successBox" class="msg ok" role="status" aria-live="polite"></div>
 
-                <div class="input-group">
-                    <i class="fa-solid fa-lock icon"></i>
-                    <input type="password" id="password" required placeholder="Password">
-                    <button type="button" class="password-toggle" data-target="password" aria-label="Show password">
-                        <i class="fa-regular fa-eye"></i>
-                    </button>
-                </div>
+                <form id="adminLoginForm" novalidate>
+                    <div class="field">
+                        <label for="email">Email</label>
+                        <input id="email" name="email" type="email" autocomplete="email" required>
+                    </div>
 
-                <div class="options-group">
-                    <label class="remember-me">
-                        <input type="checkbox" id="rememberDevice">
-                        <span>Remember this device</span>
-                    </label>
-                    <a href="#" class="forgot-pwd">Forgot Password?</a>
-                </div>
-                <p class="helper-text">Use the same email address in the reset flow to receive your password link.</p>
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required>
+                    </div>
 
-                <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY_HERE" style="margin-bottom: 20px;"></div>
+                    <div class="row">
+                        <label><input id="rememberMe" type="checkbox"> Remember Me</label>
+                    </div>
 
-                <button type="submit" class="login-btn">
-                    <span>Authenticate</span>
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                </button>
-            </form>
-        </div>
-    </div>
+                    <button id="loginBtn" type="submit" class="login-btn">Sign In</button>
+                </form>
+            </div>
+        </section>
+    </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="admin-auth.js"></script>
 </body>
 </html>
