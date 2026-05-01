@@ -29,9 +29,21 @@
                 <i class="fa-solid fa-truck"></i>
                 <span>Truck Fleet</span>
             </li>
+            <li class="nav-item" data-target="maintenance-section">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+                <span>Maintenance</span>
+            </li>
             <li class="nav-item" data-target="fuel-section">
                 <i class="fa-solid fa-gas-pump"></i>
                 <span>Fuel Analytics</span>
+            </li>
+            <li class="nav-item" data-target="profitability-section">
+                <i class="fa-solid fa-sack-dollar"></i>
+                <span>Profitability</span>
+            </li>
+            <li class="nav-item" data-target="financial-reports-section">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Financial Reports</span>
             </li>
         </ul>
 
@@ -56,33 +68,32 @@
         </header>
 
         <section id="overview-section" class="content-section active">
-            <div class="overview-inner">
-                <div class="overview-kpi-grid">
-                    <article class="kpi-card kpi-card-trucks">
-                        <div class="kpi-card-accent" aria-hidden="true"></div>
-                        <div class="kpi-card-head">
-                            <span class="kpi-icon-wrap" aria-hidden="true"><i class="fa-solid fa-truck"></i></span>
-                            <h3 class="kpi-title">Total Trucks</h3>
-                        </div>
-                        <p class="kpi-value"><span id="kpiTotalTrucks">—</span></p>
+            <div class="overview-inner executive-overview-wrap">
+                <div class="executive-kpi-grid">
+                    <article class="kpi-card executive-kpi-card">
+                        <p class="executive-kpi-label">Total Active Trucks</p>
+                        <p class="executive-kpi-value"><span id="kpiTotalTrucks">—</span></p>
                     </article>
-                    <article class="kpi-card kpi-card-drivers">
-                        <div class="kpi-card-accent kpi-accent-emerald" aria-hidden="true"></div>
-                        <div class="kpi-card-head">
-                            <span class="kpi-icon-wrap kpi-icon-emerald" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
-                            <h3 class="kpi-title">Active Drivers</h3>
-                        </div>
-                        <p class="kpi-value"><span id="kpiActiveDrivers">—</span></p>
+                    <article class="kpi-card executive-kpi-card">
+                        <p class="executive-kpi-label">30-Day Gross Revenue</p>
+                        <p class="executive-kpi-value"><span id="kpi30DayRev">—</span></p>
                     </article>
-                    <article class="kpi-card kpi-card-fuel">
-                        <div class="kpi-card-accent kpi-accent-amber" aria-hidden="true"></div>
-                        <div class="kpi-card-head">
-                            <span class="kpi-icon-wrap kpi-icon-amber" aria-hidden="true"><i class="fa-solid fa-droplet"></i></span>
-                            <h3 class="kpi-title">Total Fuel Logged (L)</h3>
-                        </div>
-                        <p class="kpi-value"><span id="kpiTotalFuel">—</span></p>
+                    <article class="kpi-card executive-kpi-card">
+                        <p class="executive-kpi-label">30-Day Maintenance</p>
+                        <p class="executive-kpi-value"><span id="kpi30DayMaint">—</span></p>
+                    </article>
+                    <article class="kpi-card executive-kpi-card">
+                        <p class="executive-kpi-label">30-Day Net Profit</p>
+                        <p class="executive-kpi-value"><span id="kpi30DayProfit">—</span></p>
                     </article>
                 </div>
+
+                <article class="driver-card executive-activity-card">
+                    <h3>Recent Fleet Activity</h3>
+                    <ul id="recentFleetActivityList" class="executive-activity-list">
+                        <li class="executive-activity-empty">No recent activity yet.</li>
+                    </ul>
+                </article>
             </div>
         </section>
         <section id="driver-section" class="content-section">
@@ -192,6 +203,59 @@
                 </div>
             </div>
         </section>
+        <section id="maintenance-section" class="content-section">
+            <div class="maintenance-wrap">
+                <article class="driver-card maintenance-card">
+                    <h3>Log Maintenance</h3>
+                    <form id="maintenanceForm" class="driver-form">
+                        <label for="maintTruckSelect">Select truck</label>
+                        <select id="maintTruckSelect" required>
+                            <option value="">Select truck</option>
+                        </select>
+
+                        <label for="maintDate">Service date</label>
+                        <input type="date" id="maintDate" required>
+
+                        <label for="maintType">Service type</label>
+                        <select id="maintType" required>
+                            <option value="">Select service type</option>
+                            <option value="Oil Change">Oil Change</option>
+                            <option value="Tire Replacement">Tire Replacement</option>
+                            <option value="Engine Repair">Engine Repair</option>
+                            <option value="General Service">General Service</option>
+                        </select>
+
+                        <label for="maintCost">Total cost</label>
+                        <input type="number" id="maintCost" placeholder="0.00" min="0" step="0.01" required>
+
+                        <label for="maintNotes">Notes</label>
+                        <textarea id="maintNotes" rows="3" placeholder="Optional notes about the service"></textarea>
+
+                        <button type="submit">Log Maintenance</button>
+                    </form>
+                </article>
+
+                <article class="driver-card maintenance-history-card">
+                    <h3>Service History</h3>
+                    <div class="table-wrap">
+                        <table class="driver-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Truck</th>
+                                    <th>Service Type</th>
+                                    <th>Cost</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maintenanceTableBody">
+                                <!-- Maintenance rows will appear here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
         <section id="fuel-section" class="content-section">
             <div class="fuel-analytics-wrap">
                 <article class="driver-card fuel-analytics-card">
@@ -225,10 +289,144 @@
                 </article>
             </div>
         </section>
+
+        <section id="profitability-section" class="content-section">
+            <div class="profitability-wrap">
+                <article class="driver-card profitability-card profit-card-glass">
+                    <h3>Trip profitability</h3>
+                    <p class="profit-form-hint">Log revenue and expenses per trip; totals update as you type.</p>
+                    <form id="profitabilityForm" class="driver-form">
+                        <label for="profTruckSelect">Select truck</label>
+                        <select id="profTruckSelect" required>
+                            <option value="">Select truck</option>
+                        </select>
+                        <p id="selectedDriverDisplay" style="color: #94a3b8; font-size: 0.9em; margin-top: 5px; margin-bottom: 15px;">
+                            Assigned Driver: <span id="profDriverName" style="color: #3b82f6; font-weight: bold;">Select a truck first</span>
+                        </p>
+
+                        <label for="profTripDate">Date of trip</label>
+                        <input type="date" id="profTripDate" required>
+
+                        <label for="profStartLoc">Start location</label>
+                        <input type="text" id="profStartLoc" placeholder="e.g. Johannesburg depot" required>
+
+                        <label for="profEndLoc">End location</label>
+                        <input type="text" id="profEndLoc" placeholder="e.g. Durban hub" required>
+
+                        <label for="tripDistanceKm">Distance (km)</label>
+                        <input type="text" id="tripDistanceKm" placeholder="0.0" inputmode="decimal" autocomplete="off">
+
+                        <label for="profTotalRevenue">Total revenue</label>
+                        <input type="number" id="profTotalRevenue" placeholder="0.00" min="0" step="0.01" required>
+
+                        <label for="profFuelLitres">Fuel litres</label>
+                        <input type="number" id="profFuelLitres" placeholder="0" min="0" step="0.01" value="0">
+
+                        <label for="profFuelRatePerLitre">Fuel rate per litre</label>
+                        <input type="number" id="profFuelRatePerLitre" placeholder="0.00" min="0" step="0.01" value="0">
+
+                        <label for="profOtherExpenses">Other expenses</label>
+                        <input type="number" id="profOtherExpenses" placeholder="0.00" min="0" step="0.01" value="0">
+
+                        <label for="enRouteRepairCost">En-Route Repair Cost (GH₵)</label>
+                        <input type="number" id="enRouteRepairCost" placeholder="0.00" step="0.01" min="0" value="0">
+
+                        <label for="enRouteRepairNotes">Repair Details</label>
+                        <input type="text" id="enRouteRepairNotes" placeholder="e.g., Replaced blown left rear tire">
+
+                        <div class="profit-live-calc" aria-live="polite">
+                            <div class="profit-metric">
+                                <span class="profit-metric-label">Calculated fuel cost</span>
+                                <span id="profCalcFuelCost" class="profit-metric-value">0.00</span>
+                            </div>
+                            <div class="profit-metric">
+                                <span class="profit-metric-label">Total expenses</span>
+                                <span id="profCalcTotalExpenses" class="profit-metric-value">0.00</span>
+                            </div>
+                            <div class="profit-metric">
+                                <span class="profit-metric-label">Net profit</span>
+                                <span id="profCalcNetProfit" class="profit-metric-value">0.00</span>
+                            </div>
+                            <div class="profit-metric">
+                                <span class="profit-metric-label">Expense margin</span>
+                                <span id="profCalcExpenseMargin" class="profit-metric-value">—</span>
+                            </div>
+                        </div>
+
+                        <button type="submit">Save profitability log</button>
+                    </form>
+                </article>
+
+                <article class="driver-card profitability-history-card profit-card-glass">
+                    <h3>Recent profitability logs</h3>
+                    <div class="table-wrap">
+                        <table class="driver-table profitability-table">
+                            <thead>
+                                <tr>
+                                    <th>DATE</th>
+                                    <th>TRUCK</th>
+                                    <th>START</th>
+                                    <th>END</th>
+                                    <th>DISTANCE</th>
+                                    <th>REVENUE</th>
+                                    <th>EFFICIENCY (Km/L)</th>
+                                    <th>EXPECTED FUEL</th>
+                                    <th>VARIANCE</th>
+                                    <th>TOTAL EXPENSES</th>
+                                    <th>NET PROFIT</th>
+                                    <th>EXPENSE MARGIN</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profitabilityTableBody">
+                                <!-- Rows will load here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="financial-reports-section" class="content-section">
+            <div class="financial-reports-wrap">
+                <article class="driver-card financial-filter-card">
+                    <div class="time-filter-bar" role="group" aria-label="Financial report time filters">
+                        <button id="btn-filter-week" class="time-filter-btn" type="button">1 Week</button>
+                        <button id="btn-filter-month" class="time-filter-btn" type="button">1 Month</button>
+                        <button id="btn-filter-3months" class="time-filter-btn" type="button">3 Months</button>
+                        <button id="btn-filter-all" class="time-filter-btn active" type="button">All Time</button>
+                    </div>
+                </article>
+
+                <div class="financial-chart-grid">
+                    <article class="driver-card financial-chart-card">
+                        <h3>Net Profit Trend</h3>
+                        <div class="financial-chart-canvas-wrap">
+                            <canvas id="profitTrendChart" aria-label="Line chart of net profit trend"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="driver-card financial-chart-card">
+                        <h3>Revenue vs Expenses</h3>
+                        <div class="financial-chart-canvas-wrap">
+                            <canvas id="revenueExpenseChart" aria-label="Grouped bar chart of revenue versus expenses"></canvas>
+                        </div>
+                    </article>
+
+                    <article class="driver-card financial-chart-card">
+                        <h3>Truck Revenue Leaderboard (GH₵)</h3>
+                        <div class="financial-chart-canvas-wrap">
+                            <canvas id="truckComparisonChart" aria-label="Bar chart comparing truck revenue"></canvas>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <!-- Replace YOUR_API_KEY with a key that has Distance Matrix API enabled (HTTP referrer restrictions recommended). -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&amp;libraries=places"></script>
     <script src="admin-dashboard.js"></script>
 </body>
 </html>

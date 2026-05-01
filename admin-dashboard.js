@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (targetSection) {
                 targetSection.classList.add('active');
             }
+
+            if (targetId === 'financial-reports-section') {
+                window.loadFinancialReports?.();
+            }
         });
     });
 
@@ -187,6 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Trucks fetched and displayed successfully!');
 
             await populateTruckDropdown();
+            await populateProfTruckDropdown();
+            await populateMaintTruckDropdown();
         } catch (error) {
             console.error('Error fetching trucks:', error.message);
         }
@@ -233,6 +239,173 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error populating truck dropdown:', error.message);
         }
     }
+
+    async function populateProfTruckDropdown() {
+        const selectEl = document.getElementById('profTruckSelect');
+        if (!selectEl || !supabase) return;
+
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (error) throw error;
+
+            selectEl.innerHTML = '<option value="">Select truck</option>';
+
+            (trucks || []).forEach((truck) => {
+                const option = document.createElement('option');
+                option.value = truck.id;
+                option.textContent = truck.truck_number;
+                selectEl.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating profitability truck dropdown:', error.message);
+        }
+    }
+
+    async function populateMaintTruckDropdown() {
+        const selectEl = document.getElementById('maintTruckSelect');
+        if (!selectEl || !supabase) return;
+
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (error) throw error;
+
+            selectEl.innerHTML = '<option value="">Select truck</option>';
+
+            (trucks || []).forEach((truck) => {
+                const option = document.createElement('option');
+                option.value = truck.id;
+                option.textContent = truck.truck_number;
+                selectEl.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating maintenance truck dropdown:', error.message);
+        }
+    }
+
+    function formatProfitMoney(n) {
+        if (!Number.isFinite(n)) return '—';
+        return n.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    }
+
+    function updateProfitabilityLiveCalc() {
+        const revenue =
+            Number(document.getElementById('profTotalRevenue')?.value) || 0;
+        const fuelLitres =
+            Number(document.getElementById('profFuelLitres')?.value) || 0;
+        const fuelRate =
+            Number(document.getElementById('profFuelRatePerLitre')?.value) || 0;
+        const otherExpenses =
+            Number(document.getElementById('profOtherExpenses')?.value) || 0;
+
+        const fuelCost = fuelLitres * fuelRate;
+        const totalExpenses = fuelCost + otherExpenses;
+        const netProfit = revenue - totalExpenses;
+        const expensePct =
+            revenue > 0 ? (totalExpenses / revenue) * 100 : null;
+
+        const elFuel = document.getElementById('profCalcFuelCost');
+        const elTot = document.getElementById('profCalcTotalExpenses');
+        const elNet = document.getElementById('profCalcNetProfit');
+        const elMarg = document.getElementById('profCalcExpenseMargin');
+
+        if (elFuel) elFuel.textContent = formatProfitMoney(fuelCost);
+        if (elTot) elTot.textContent = formatProfitMoney(totalExpenses);
+        if (elNet) elNet.textContent = formatProfitMoney(netProfit);
+        if (elMarg) {
+            elMarg.textContent =
+                expensePct === null ? '—' : `${expensePct.toFixed(2)}%`;
+        }
+    }
+
+    // Bulletproof function to fetch and display profitability logs
+    window.fetchProfitabilityLogs = async function () {
+        // 1. Find the table in the HTML
+        const tableBody = document.getElementById('profitabilityTableBody');
+
+        // Safety check: If the HTML is missing the ID, warn us in the console!
+        if (!tableBody) {
+            console.error(
+                "Warning: Could not find <tbody id='profitabilityTableBody'> in the HTML!"
+            );
+            return;
+        }
+
+        try {
+            // 2. Fetch raw data WITHOUT the complex truck join to prevent schema crashes
+            const { data: logs, error } = await supabase
+                .from('trip_financials')
+                .select('*')
+                .order('trip_date', { ascending: false });
+
+            if (error) throw error;
+
+            // 3. Clear the table before drawing
+            tableBody.innerHTML = '';
+
+            // 4. Loop through the logs and create rows
+            (logs || []).forEach((log) => {
+                // Do the math
+                const fuelCost = log.fuel_litres * log.fuel_rate;
+                const totalExpenses = fuelCost + log.other_expenses;
+                const netProfit = log.revenue - totalExpenses;
+                const distanceKm = Number(log.distance_km) || 0;
+                const fuelEfficiency =
+                    Number(log.fuel_litres) > 0
+                        ? distanceKm / Number(log.fuel_litres)
+                        : null;
+
+                const expectedFuel = distanceKm * 0.65;
+                const fuelLitresActual = Number(log.fuel_litres) || 0;
+                const fuelVariance = fuelLitresActual - expectedFuel;
+                const varianceColor =
+                    fuelVariance > 0 ? '#ef4444' : '#10b981';
+                const varianceSign = fuelVariance >= 0 ? '+' : '';
+                const varianceFormatted = `${varianceSign}${fuelVariance.toFixed(2)} L`;
+
+                let expenseMargin = 0;
+                if (log.revenue > 0) {
+                    expenseMargin = (totalExpenses / log.revenue) * 100;
+                }
+
+                // Create the row
+                const row = document.createElement('tr');
+
+                // Determine color for Net Profit (Green for profit, Red for loss)
+                const profitColor = netProfit >= 0 ? '#10b981' : '#ef4444';
+
+                row.innerHTML = `
+                <td>${new Date(log.trip_date).toLocaleDateString()}</td>
+                <td>Truck ID: ${log.truck_id}</td>
+                <td>${log.start_location}</td>
+                <td>${log.end_location}</td>
+                <td>${distanceKm.toFixed(2)} km</td>
+                <td>GH₵${log.revenue.toFixed(2)}</td>
+                <td style="${fuelEfficiency !== null && fuelEfficiency < 2.5 ? 'color: #ef4444;' : ''}">${fuelEfficiency !== null ? `${fuelEfficiency.toFixed(2)} Km/L` : '—'}</td>
+                <td>${expectedFuel.toFixed(2)} L</td>
+                <td style="color: ${varianceColor}; font-weight: bold;">${varianceFormatted}</td>
+                <td>GH₵${totalExpenses.toFixed(2)}</td>
+                <td style="color: ${profitColor}; font-weight: bold;">GH₵${netProfit.toFixed(2)}</td>
+                <td>${expenseMargin.toFixed(2)}%</td>
+            `;
+                tableBody.appendChild(row);
+            });
+
+            console.log('Success: Profitability table drawn!');
+        } catch (error) {
+            console.error('Error drawing profitability table:', error.message);
+        }
+    };
 
     async function updateLiveFleetStatus() {
         const tableBody = document.getElementById('fleetStatusBody');
@@ -297,11 +470,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const elTrucks = document.getElementById('kpiTotalTrucks');
         const elDrivers = document.getElementById('kpiActiveDrivers');
         const elFuel = document.getElementById('kpiTotalFuel');
+        const elMaintCostMonth = document.getElementById('kpiMaintenanceMonthCost');
+        const elTopMaintType = document.getElementById('kpiTopMaintenanceType');
 
         if (!supabase) {
             if (elTrucks) elTrucks.textContent = '—';
             if (elDrivers) elDrivers.textContent = '—';
             if (elFuel) elFuel.textContent = '—';
+            if (elMaintCostMonth) elMaintCostMonth.textContent = '—';
+            if (elTopMaintType) elTopMaintType.textContent = '—';
             return;
         }
 
@@ -348,9 +525,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                 elFuel.textContent = '—';
             }
         }
+
+        if (elMaintCostMonth) {
+            try {
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const { data, error } = await supabase
+                    .from('maintenance_logs')
+                    .select('cost, service_date')
+                    .gte('service_date', monthStart.toISOString().split('T')[0]);
+                if (error) throw error;
+                const totalMonthCost = (data || []).reduce(
+                    (sum, row) => sum + (Number(row.cost) || 0),
+                    0
+                );
+                elMaintCostMonth.textContent = `GH₵${totalMonthCost.toFixed(2)}`;
+            } catch (err) {
+                console.error('Overview KPI (maintenance month cost):', err.message);
+                elMaintCostMonth.textContent = '—';
+            }
+        }
+
+        if (elTopMaintType) {
+            try {
+                const { data, error } = await supabase
+                    .from('maintenance_logs')
+                    .select('service_type');
+                if (error) throw error;
+
+                const counts = {};
+                (data || []).forEach((row) => {
+                    const type = (row.service_type || '').trim();
+                    if (!type) return;
+                    counts[type] = (counts[type] || 0) + 1;
+                });
+
+                const topType = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+                elTopMaintType.textContent = topType || 'N/A';
+            } catch (err) {
+                console.error('Overview KPI (top maintenance type):', err.message);
+                elTopMaintType.textContent = '—';
+            }
+        }
+
+        if (typeof window.loadExecutiveOverview === 'function') {
+            await window.loadExecutiveOverview();
+        }
     }
 
     let fuelChartInstance = null;
+    let profitTrendChartInstance = null;
+    let revExpChartInstance = null;
+    let truckComparisonChartInstance = null;
 
     async function renderFuelAnalytics() {
         if (typeof Chart === 'undefined') {
@@ -478,9 +704,363 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // --- FETCH AND DISPLAY MAINTENANCE LOGS ---
+    window.fetchMaintenanceLogs = async function() {
+        // 1. Target the table body
+        const tableBody = document.getElementById('maintenanceTableBody');
+        
+        // Safety check in case the HTML ID is missing
+        if (!tableBody) {
+            console.error("Warning: Could not find <tbody id='maintenanceTableBody'> in the HTML!");
+            return; 
+        }
+
+        try {
+            // 2. Fetch raw data from Supabase (No joins to avoid schema crashes)
+            const { data: logs, error } = await supabase
+                .from('maintenance_logs')
+                .select('*') 
+                .order('service_date', { ascending: false }); // Show newest first
+
+            if (error) throw error;
+
+            // 3. Clear out any old data before drawing the new rows
+            tableBody.innerHTML = '';
+
+            // 4. Loop through the logs and build the HTML rows
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                // Format the cost nicely with GH₵
+                const costFormatted = log.cost ? `GH₵${parseFloat(log.cost).toFixed(2)}` : 'GH₵0.00';
+
+                // Use the data to populate the columns
+                row.innerHTML = `
+                    <td>${new Date(log.service_date).toLocaleDateString()}</td>
+                    <td>Truck ID: ${log.truck_id}</td>
+                    <td>${log.service_type}</td>
+                    <td style="font-weight: bold; color: #ef4444;">${costFormatted}</td>
+                    <td>${log.notes || '-'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error("Error drawing maintenance table:", error.message);
+        }
+    };
+
     window.__ssvFetchTripHistory = fetchTripHistory;
     window.__ssvUpdateLiveFleet = updateLiveFleetStatus;
     window.__ssvRenderFuelChart = renderFuelAnalytics;
+
+    function setActiveFinancialFilter(timeframe) {
+        const filterMap = {
+            week: 'btn-filter-week',
+            month: 'btn-filter-month',
+            '3months': 'btn-filter-3months',
+            all: 'btn-filter-all',
+        };
+        const activeId = filterMap[timeframe] || filterMap.all;
+        document.querySelectorAll('.time-filter-btn').forEach((btn) => {
+            btn.classList.toggle('active', btn.id === activeId);
+        });
+    }
+
+    function getFinancialStartDate(timeframe) {
+        const now = new Date();
+        const startDate = new Date(now);
+        if (timeframe === 'week') {
+            startDate.setDate(startDate.getDate() - 7);
+            return startDate;
+        }
+        if (timeframe === 'month') {
+            startDate.setDate(startDate.getDate() - 30);
+            return startDate;
+        }
+        if (timeframe === '3months') {
+            startDate.setDate(startDate.getDate() - 90);
+            return startDate;
+        }
+        return null;
+    }
+
+    window.loadFinancialReports = async function (timeframe = 'all') {
+        const trendCanvas = document.getElementById('profitTrendChart');
+        const revExpCanvas = document.getElementById('revenueExpenseChart');
+        const truckCanvas = document.getElementById('truckComparisonChart');
+        if (!trendCanvas || !revExpCanvas || !truckCanvas || !supabase) return;
+        if (typeof Chart === 'undefined') return;
+
+        setActiveFinancialFilter(timeframe);
+
+        try {
+            const startDate = getFinancialStartDate(timeframe);
+            let query = supabase
+                .from('trip_financials')
+                .select('trip_date, truck_id, revenue, fuel_litres, fuel_rate, other_expenses')
+                .order('trip_date', { ascending: true });
+
+            if (startDate) {
+                query = query.gte('trip_date', startDate.toISOString());
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            const rows = data || [];
+            const labels = rows.map((row) => {
+                const d = row.trip_date ? new Date(`${row.trip_date}T12:00:00`) : null;
+                return d ? d.toLocaleDateString() : '—';
+            });
+            const revenues = rows.map((row) => Number(row.revenue) || 0);
+            const totalExpenses = rows.map((row) => {
+                const fuelCost = (Number(row.fuel_litres) || 0) * (Number(row.fuel_rate) || 0);
+                return fuelCost + (Number(row.other_expenses) || 0);
+            });
+            const netProfits = revenues.map((rev, idx) => rev - totalExpenses[idx]);
+
+            // --- LEADERBOARD MATH ---
+            const truckRevenueMap = {};
+            rows.forEach((log) => {
+                const truckName = `Truck ${log.truck_id}`;
+                if (!truckRevenueMap[truckName]) {
+                    truckRevenueMap[truckName] = 0;
+                }
+                truckRevenueMap[truckName] += Number(log.revenue) || 0;
+            });
+            const leaderboardLabels = Object.keys(truckRevenueMap);
+            const leaderboardData = Object.values(truckRevenueMap);
+
+            if (profitTrendChartInstance) {
+                profitTrendChartInstance.destroy();
+                profitTrendChartInstance = null;
+            }
+            if (revExpChartInstance) {
+                revExpChartInstance.destroy();
+                revExpChartInstance = null;
+            }
+            if (truckComparisonChartInstance) {
+                truckComparisonChartInstance.destroy();
+                truckComparisonChartInstance = null;
+            }
+
+            profitTrendChartInstance = new Chart(trendCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Net Profit',
+                            data: netProfits,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            fill: true,
+                            tension: 0.25,
+                            pointRadius: 3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1' } },
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.14)' },
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false },
+                        },
+                    },
+                },
+            });
+
+            revExpChartInstance = new Chart(revExpCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: revenues,
+                            backgroundColor: '#3b82f6',
+                            borderColor: '#2563eb',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        },
+                        {
+                            label: 'Total Expenses',
+                            data: totalExpenses,
+                            backgroundColor: '#f97316',
+                            borderColor: '#ea580c',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1' } },
+                    },
+                    scales: {
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.14)' },
+                            beginAtZero: true,
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { display: false },
+                        },
+                    },
+                },
+            });
+
+            // --- DRAW THE LEADERBOARD CHART ---
+            truckComparisonChartInstance = new Chart(truckCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: leaderboardLabels,
+                    datasets: [
+                        {
+                            label: 'Total Revenue (GH₵)',
+                            data: leaderboardData,
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 6,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8' },
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' },
+                        },
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('Financial reports load error:', error.message);
+        }
+    };
+
+    window.loadExecutiveOverview = async function () {
+        const elTruckCount = document.getElementById('kpiTotalTrucks');
+        const el30DayRev = document.getElementById('kpi30DayRev');
+        const el30DayMaint = document.getElementById('kpi30DayMaint');
+        const el30DayProfit = document.getElementById('kpi30DayProfit');
+        const recentActivityList = document.getElementById('recentFleetActivityList');
+
+        if (!supabase) return;
+
+        const formatMoney = (value) => `GH₵${(Number(value) || 0).toFixed(2)}`;
+
+        try {
+            const { count: truckCount, error: truckCountErr } = await supabase
+                .from('trucks')
+                .select('*', { count: 'exact', head: true });
+            if (truckCountErr) throw truckCountErr;
+            if (elTruckCount) elTruckCount.textContent = truckCount != null ? String(truckCount) : '0';
+
+            const sinceDate = new Date();
+            sinceDate.setDate(sinceDate.getDate() - 30);
+            const sinceDateString = sinceDate.toISOString().split('T')[0];
+
+            const { data: financialRows, error: financialErr } = await supabase
+                .from('trip_financials')
+                .select('trip_date, truck_id, revenue, fuel_litres, fuel_rate, other_expenses')
+                .gte('trip_date', sinceDateString);
+            if (financialErr) throw financialErr;
+
+            const grossRevenue = (financialRows || []).reduce(
+                (sum, row) => sum + (Number(row.revenue) || 0),
+                0
+            );
+            const financialExpenses = (financialRows || []).reduce((sum, row) => {
+                const fuelCost = (Number(row.fuel_litres) || 0) * (Number(row.fuel_rate) || 0);
+                return sum + fuelCost + (Number(row.other_expenses) || 0);
+            }, 0);
+
+            const { data: maintRows, error: maintErr } = await supabase
+                .from('maintenance_logs')
+                .select('service_date, truck_id, service_type, cost')
+                .gte('service_date', sinceDateString);
+            if (maintErr) throw maintErr;
+
+            const maintenanceTotal = (maintRows || []).reduce(
+                (sum, row) => sum + (Number(row.cost) || 0),
+                0
+            );
+            const netProfit = grossRevenue - financialExpenses - maintenanceTotal;
+
+            if (el30DayRev) el30DayRev.textContent = formatMoney(grossRevenue);
+            if (el30DayMaint) el30DayMaint.textContent = formatMoney(maintenanceTotal);
+            if (el30DayProfit) {
+                el30DayProfit.textContent = formatMoney(netProfit);
+                el30DayProfit.style.color = netProfit >= 0 ? '#10b981' : '#ef4444';
+            }
+
+            if (recentActivityList) {
+                const tripActivity = (financialRows || []).map((row) => ({
+                    at: row.trip_date ? new Date(`${row.trip_date}T12:00:00`) : new Date(0),
+                    text: `Trip logged for Truck ID ${row.truck_id} (Revenue ${formatMoney(row.revenue)})`,
+                }));
+                const maintActivity = (maintRows || []).map((row) => ({
+                    at: row.service_date ? new Date(`${row.service_date}T12:00:00`) : new Date(0),
+                    text: `Maintenance logged for Truck ID ${row.truck_id}: ${row.service_type || 'Service'} (${formatMoney(row.cost)})`,
+                }));
+
+                const merged = [...tripActivity, ...maintActivity]
+                    .sort((a, b) => b.at - a.at)
+                    .slice(0, 5);
+
+                recentActivityList.innerHTML = '';
+                if (merged.length === 0) {
+                    recentActivityList.innerHTML =
+                        '<li class="executive-activity-empty">No recent activity in the last 30 days.</li>';
+                } else {
+                    merged.forEach((item) => {
+                        const li = document.createElement('li');
+                        li.className = 'executive-activity-item';
+                        li.innerHTML = `
+                            <span class="executive-activity-date">${escapeHTML(item.at.toLocaleDateString())}</span>
+                            <span class="executive-activity-text">${escapeHTML(item.text)}</span>
+                        `;
+                        recentActivityList.appendChild(li);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Executive overview load error:', error.message);
+            if (el30DayRev) el30DayRev.textContent = '—';
+            if (el30DayMaint) el30DayMaint.textContent = '—';
+            if (el30DayProfit) {
+                el30DayProfit.textContent = '—';
+                el30DayProfit.style.color = '#f8fafc';
+            }
+            if (recentActivityList) {
+                recentActivityList.innerHTML =
+                    '<li class="executive-activity-empty">Could not load recent activity.</li>';
+            }
+        }
+    };
 
     if (addDriverForm && supabase) {
         addDriverForm.addEventListener('submit', async (event) => {
@@ -671,6 +1251,325 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const maintenanceForm = document.getElementById('maintenanceForm');
+    if (maintenanceForm && supabase) {
+        maintenanceForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const truckId = document.getElementById('maintTruckSelect')?.value;
+            const serviceDate = document.getElementById('maintDate')?.value;
+            const serviceType = document.getElementById('maintType')?.value;
+            const cost = Number(document.getElementById('maintCost')?.value);
+            const notes =
+                document.getElementById('maintNotes')?.value?.trim() ?? '';
+
+            if (!truckId || !serviceDate || !serviceType || Number.isNaN(cost) || cost < 0) {
+                alert('Please complete all required maintenance fields correctly.');
+                return;
+            }
+
+            const submitBtn = maintenanceForm.querySelector('button[type="submit"]');
+            const prevLabel = submitBtn?.innerText ?? 'Log Maintenance';
+            if (submitBtn) {
+                submitBtn.innerText = 'Saving...';
+                submitBtn.disabled = true;
+            }
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error('Authentication missing. Please log out and log back in.');
+                }
+
+                const { error: insertErr } = await supabase
+                    .from('maintenance_logs')
+                    .insert([
+                        {
+                            truck_id: Number(truckId),
+                            service_date: serviceDate,
+                            service_type: serviceType,
+                            cost,
+                            notes,
+                        },
+                    ]);
+
+                if (insertErr) throw insertErr;
+
+                alert('Maintenance logged successfully!');
+                document.getElementById('maintenanceForm').reset();
+                await window.fetchMaintenanceLogs();
+                await loadOverviewStats();
+            } catch (error) {
+                console.error('Maintenance save error:', error.message);
+                alert(error.message || 'Failed to save maintenance log.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerText = prevLabel;
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+    }
+
+    const profitabilityForm = document.getElementById('profitabilityForm');
+    const profTruckSelect = document.getElementById('profTruckSelect');
+    const profLiveInputs = [
+        'profTotalRevenue',
+        'profFuelLitres',
+        'profFuelRatePerLitre',
+        'profOtherExpenses',
+    ];
+
+    profLiveInputs.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', updateProfitabilityLiveCalc);
+        }
+    });
+    updateProfitabilityLiveCalc();
+
+    function calculateTripDistance() {
+        const startEl = document.getElementById('profStartLoc');
+        const endEl = document.getElementById('profEndLoc');
+        const distEl = document.getElementById('tripDistanceKm');
+        if (!startEl || !endEl || !distEl) return;
+
+        const start = startEl.value.trim();
+        const end = endEl.value.trim();
+        if (!start || !end) return;
+
+        if (
+            typeof google === 'undefined' ||
+            !google.maps ||
+            typeof google.maps.DistanceMatrixService !== 'function'
+        ) {
+            return;
+        }
+
+        distEl.value = 'Calculating...';
+
+        const service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+            {
+                origins: [start],
+                destinations: [end],
+                travelMode: google.maps.TravelMode.DRIVING,
+            },
+            (response, status) => {
+                if (status !== 'OK') {
+                    distEl.value = '';
+                    return;
+                }
+                const element = response?.rows?.[0]?.elements?.[0];
+                if (!element || element.status !== 'OK') {
+                    distEl.value = '';
+                    return;
+                }
+                const meters = element.distance?.value ?? 0;
+                const km = meters / 1000;
+                distEl.value = km.toFixed(1);
+            }
+        );
+    }
+
+    document.getElementById('profStartLoc')?.addEventListener('blur', calculateTripDistance);
+    document.getElementById('profEndLoc')?.addEventListener('blur', calculateTripDistance);
+
+    let profitabilityAutocompleteInitialized = false;
+
+    function initMapAutocomplete() {
+        const startInput = document.getElementById('profStartLoc');
+        const endInput = document.getElementById('profEndLoc');
+        if (!(startInput && endInput && window.google)) {
+            return false;
+        }
+        if (!google.maps?.places?.Autocomplete) {
+            return false;
+        }
+        if (profitabilityAutocompleteInitialized) {
+            return true;
+        }
+
+        const startAutocomplete = new google.maps.places.Autocomplete(startInput);
+        const endAutocomplete = new google.maps.places.Autocomplete(endInput);
+
+        startAutocomplete.addListener('place_changed', calculateTripDistance);
+        endAutocomplete.addListener('place_changed', calculateTripDistance);
+
+        profitabilityAutocompleteInitialized = true;
+        return true;
+    }
+
+    function tryInitMapAutocomplete() {
+        if (initMapAutocomplete()) return;
+        let attempts = 0;
+        const maxAttempts = 60;
+        const timerId = window.setInterval(() => {
+            attempts += 1;
+            if (initMapAutocomplete() || attempts >= maxAttempts) {
+                window.clearInterval(timerId);
+            }
+        }, 100);
+    }
+
+    tryInitMapAutocomplete();
+
+    // --- AUTO-FETCH DRIVER NAME WHEN TRUCK IS SELECTED ---
+    if (profTruckSelect) {
+        profTruckSelect.addEventListener('change', async function () {
+            const truckId = this.value;
+            const driverNameSpan = document.getElementById('profDriverName');
+            if (!driverNameSpan) return;
+
+            if (!truckId) {
+                driverNameSpan.textContent = 'Select a truck first';
+                return;
+            }
+
+            driverNameSpan.textContent = 'Loading...';
+
+            try {
+                const { data, error } = await supabase
+                    .from('trucks')
+                    .select('drivers(full_name)')
+                    .eq('id', truckId)
+                    .single();
+
+                if (error) throw error;
+
+                driverNameSpan.textContent =
+                    data?.drivers?.full_name || 'No driver assigned';
+            } catch (error) {
+                console.error('Error fetching driver:', error.message);
+                driverNameSpan.textContent = 'Error loading driver';
+            }
+        });
+    }
+
+    if (profitabilityForm && supabase) {
+        profitabilityForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const truckId = document.getElementById('profTruckSelect')?.value;
+            const tripDate = document.getElementById('profTripDate')?.value;
+            const startLoc =
+                document.getElementById('profStartLoc')?.value?.trim() ?? '';
+            const endLoc =
+                document.getElementById('profEndLoc')?.value?.trim() ?? '';
+            const totalRevenue = Number(
+                document.getElementById('profTotalRevenue')?.value
+            );
+            const fuelLitres =
+                Number(document.getElementById('profFuelLitres')?.value) || 0;
+            const fuelRatePerLitre =
+                Number(document.getElementById('profFuelRatePerLitre')?.value) ||
+                0;
+            const otherExpenses =
+                Number(document.getElementById('profOtherExpenses')?.value) || 0;
+            const tripDistanceKm =
+                Number(document.getElementById('tripDistanceKm')?.value) || 0;
+            const enRouteRepairCost =
+                Number(document.getElementById('enRouteRepairCost')?.value) || 0;
+            const enRouteRepairNotes =
+                document.getElementById('enRouteRepairNotes')?.value?.trim() || '';
+
+            const submitBtn = profitabilityForm.querySelector(
+                'button[type="submit"]'
+            );
+            const prevLabel = submitBtn?.innerText ?? 'Save';
+            if (submitBtn) {
+                submitBtn.innerText = 'Saving...';
+                submitBtn.disabled = true;
+            }
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error(
+                        'Authentication missing. Please log out and log back in.'
+                    );
+                }
+
+                if (!truckId) {
+                    throw new Error('Please select a truck.');
+                }
+                if (!tripDate) {
+                    throw new Error('Please choose the trip date.');
+                }
+                if (!startLoc || !endLoc) {
+                    throw new Error('Start and end location are required.');
+                }
+                if (Number.isNaN(totalRevenue) || totalRevenue < 0) {
+                    throw new Error('Total revenue must be a valid non-negative number.');
+                }
+
+                const { error: insertErr } = await supabase
+                    .from('trip_financials')
+                    .insert([
+                        {
+                            truck_id: Number(truckId),
+                            trip_date: tripDate,
+                            start_location: startLoc,
+                            end_location: endLoc,
+                            distance_km: tripDistanceKm,
+                            revenue: totalRevenue,
+                            fuel_litres: fuelLitres,
+                            fuel_rate: fuelRatePerLitre,
+                            other_expenses: otherExpenses,
+                        },
+                    ]);
+
+                if (insertErr) throw insertErr;
+
+                if (enRouteRepairCost > 0) {
+                    const { error: maintInsertErr } = await supabase
+                        .from('maintenance_logs')
+                        .insert([
+                            {
+                                truck_id: Number(truckId),
+                                service_date: tripDate,
+                                service_type: 'En-Route Repair',
+                                cost: enRouteRepairCost,
+                                notes: enRouteRepairNotes || 'En-route repair logged from trip profitability form.',
+                            },
+                        ]);
+
+                    if (maintInsertErr) throw maintInsertErr;
+                }
+
+                alert('Profitability log saved!');
+                document.getElementById('profitabilityForm')?.reset();
+                await window.fetchProfitabilityLogs();
+
+                const zeroFuel = document.getElementById('profFuelLitres');
+                const zeroRate = document.getElementById('profFuelRatePerLitre');
+                const zeroOther = document.getElementById('profOtherExpenses');
+                if (zeroFuel) zeroFuel.value = '0';
+                if (zeroRate) zeroRate.value = '0';
+                if (zeroOther) zeroOther.value = '0';
+                const zeroRepair = document.getElementById('enRouteRepairCost');
+                if (zeroRepair) zeroRepair.value = '0';
+                updateProfitabilityLiveCalc();
+                await populateProfTruckDropdown();
+                await window.fetchMaintenanceLogs();
+            } catch (error) {
+                console.error('Profitability save error:', error);
+                alert(error.message || 'Failed to save profitability log.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerText = prevLabel;
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+    }
+
     if (searchDriversInput && driverTableBody) {
         searchDriversInput.addEventListener('input', () => {
             const searchValue = searchDriversInput.value.toLowerCase();
@@ -699,6 +1598,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    document.getElementById('btn-filter-week')?.addEventListener('click', () => {
+        window.loadFinancialReports?.('week');
+    });
+    document.getElementById('btn-filter-month')?.addEventListener('click', () => {
+        window.loadFinancialReports?.('month');
+    });
+    document.getElementById('btn-filter-3months')?.addEventListener('click', () => {
+        window.loadFinancialReports?.('3months');
+    });
+    document.getElementById('btn-filter-all')?.addEventListener('click', () => {
+        window.loadFinancialReports?.('all');
+    });
+
     fetchDrivers();
     fetchTrucks();
     populateDriverDropdown();
@@ -707,6 +1619,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadOverviewStats();
     renderFuelAnalytics();
     fetchTripHistory();
+    window.fetchMaintenanceLogs();
+    window.fetchProfitabilityLogs();
+    window.loadFinancialReports('all');
+    window.loadExecutiveOverview();
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
