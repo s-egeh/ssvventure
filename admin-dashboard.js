@@ -8,6 +8,34 @@ window.escapeHTML = function(str) {
         .replace(/'/g, '&#039;');
 };
 
+window.markWaybillPaid = async function (tripId) {
+    if (!confirm('Mark this waybill as paid today?')) {
+        return;
+    }
+    const client = window.supabaseClient || window.createSupabaseClient?.();
+    if (!client) {
+        alert('Supabase client not available.');
+        return;
+    }
+    try {
+        const { error } = await client
+            .from('trip_financials')
+            .update({
+                is_paid: true,
+                payment_date: new Date().toISOString(),
+            })
+            .eq('id', tripId);
+        if (error) throw error;
+        alert('Waybill marked as paid.');
+        if (typeof window.fetchProfitabilityLogs === 'function') {
+            await window.fetchProfitabilityLogs();
+        }
+    } catch (error) {
+        console.error('markWaybillPaid:', error);
+        alert(error?.message || 'Failed to update payment status.');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
@@ -66,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const addDriverForm = document.getElementById('addDriverForm');
-    const driverTableBody = document.getElementById('driverTableBody');
+    const driverRosterBody = document.getElementById('driverRosterBody');
     const truckTableBody = document.getElementById('truckTableBody');
     const searchDriversInput = document.getElementById('searchDrivers');
     const searchTrucksInput = document.getElementById('searchTrucks');
@@ -100,10 +128,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function fetchDrivers() {
-        try {
-            if (!supabase) throw new Error('Supabase client not initialized.');
+    async function fetchDriverRoster() {
+        if (!driverRosterBody || !supabase) return;
 
+        try {
             const { data: drivers, error } = await supabase
                 .from('drivers')
                 .select('*')
@@ -111,36 +139,76 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (error) throw error;
 
-            if (driverTableBody) {
-                driverTableBody.innerHTML = '';
-            }
+            const { data: trucks, error: truckErr } = await supabase
+                .from('trucks')
+                .select('id, truck_number');
 
-            (drivers || []).forEach((driver) => {
-                const row = document.createElement('tr');
-                const displayName = driver.full_name ?? driver.name ?? '';
-                const displayContact = driver.contact_number ?? driver.phone ?? '';
-                const safeDriverStatus = String(driver.status ?? 'Active').replace(
-                    /'/g,
-                    "\\'"
-                );
-                row.innerHTML = `
-                    <td>${escapeHTML(displayName)}</td>
-                    <td>${escapeHTML(displayContact)}</td>
-                    <td>
-                        <span class="status-badge ${String(driver.status ?? '').toLowerCase() === 'active' ? 'status-active' : 'status-inactive'}">
-                            ${escapeHTML(driver.status ?? '')}
-                        </span>
-                    </td>
-                    <td class="driver-actions-cell">
-                        <button type="button" class="driver-btn driver-btn-toggle" onclick="toggleDriverStatus(${driver.id}, '${safeDriverStatus}')">Toggle Status</button>
-                        <button type="button" class="driver-btn driver-btn-delete" onclick="deleteDriver(${driver.id})">Delete</button>
-                    </td>
-                `;
-                if (driverTableBody) driverTableBody.appendChild(row);
+            if (truckErr) throw truckErr;
+
+            const truckMap = {};
+            (trucks || []).forEach((t) => {
+                truckMap[t.id] = t.truck_number;
             });
 
-            console.log('Drivers fetched successfully!');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const in30 = new Date(today);
+            in30.setDate(in30.getDate() + 30);
+
+            driverRosterBody.innerHTML = '';
+
+            (drivers || []).forEach((driver) => {
+                const displayName = driver.full_name ?? driver.name ?? '';
+                const licenseNum = driver.license_number ?? '—';
+                const expiryRaw = driver.license_expiry;
+                let expiryLabel = '—';
+                if (expiryRaw) {
+                    expiryLabel = new Date(`${expiryRaw}T12:00:00`).toLocaleDateString();
+                }
+
+                let statusLabel = 'Active';
+                let statusColor = '#10b981';
+                if (expiryRaw) {
+                    const exp = new Date(`${expiryRaw}T12:00:00`);
+                    exp.setHours(0, 0, 0, 0);
+                    if (exp < today) {
+                        statusLabel = 'Expired';
+                        statusColor = '#ef4444';
+                    } else if (exp <= in30) {
+                        statusLabel = 'Expiring Soon';
+                        statusColor = '#f59e0b';
+                    }
+                }
+
+                const truckLabel =
+                    driver.assigned_truck_id != null
+                        ? String(truckMap[driver.assigned_truck_id] ?? `ID ${driver.assigned_truck_id}`)
+                        : '—';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${escapeHTML(displayName)}</td>
+                    <td>${escapeHTML(licenseNum)}</td>
+                    <td>${escapeHTML(expiryLabel)}</td>
+                    <td>${escapeHTML(truckLabel)}</td>
+                    <td><span style="color: ${statusColor}; font-weight: 700;">${escapeHTML(statusLabel)}</span></td>
+                `;
+                driverRosterBody.appendChild(row);
+            });
+
+            console.log('Driver roster updated successfully!');
+        } catch (error) {
+            console.error('Error fetching driver roster:', error.message);
+        }
+    }
+
+    async function fetchDrivers() {
+        try {
+            if (!supabase) throw new Error('Supabase client not initialized.');
+
+            await fetchDriverRoster();
             await populateDriverDropdown();
+            console.log('Drivers fetched successfully!');
         } catch (error) {
             console.error('Error fetching drivers:', error.message);
         }
@@ -193,6 +261,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await populateTruckDropdown();
             await populateProfTruckDropdown();
             await populateMaintTruckDropdown();
+            await populateDriverTruckSelect();
+            await populateRemindTruckSelect();
         } catch (error) {
             console.error('Error fetching trucks:', error.message);
         }
@@ -290,6 +360,172 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    async function populateDriverTruckSelect() {
+        const selectEl = document.getElementById('driverTruckSelect');
+        if (!selectEl || !supabase) return;
+
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (error) throw error;
+
+            selectEl.innerHTML = '<option value="">Optional — select truck</option>';
+
+            (trucks || []).forEach((truck) => {
+                const option = document.createElement('option');
+                option.value = truck.id;
+                option.textContent = truck.truck_number;
+                selectEl.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating driver truck dropdown:', error.message);
+        }
+    }
+
+    async function populateRemindTruckSelect() {
+        const selectEl = document.getElementById('remindTruckSelect');
+        if (!selectEl || !supabase) return;
+
+        try {
+            const { data: trucks, error } = await supabase
+                .from('trucks')
+                .select('id, truck_number')
+                .order('truck_number', { ascending: true });
+
+            if (error) throw error;
+
+            selectEl.innerHTML = '<option value="">Select truck</option>';
+
+            (trucks || []).forEach((truck) => {
+                const option = document.createElement('option');
+                option.value = truck.id;
+                option.textContent = truck.truck_number;
+                selectEl.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating reminder truck dropdown:', error.message);
+        }
+    }
+
+    async function fetchReminders() {
+        const tbody = document.getElementById('activeRemindersBody');
+        if (!tbody || !supabase) return;
+
+        try {
+            const { data: rows, error } = await supabase
+                .from('fleet_reminders')
+                .select('id, truck_id, reminder_type, target_value, notes, trucks(truck_number)')
+                .eq('is_resolved', false)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            tbody.innerHTML = '';
+
+            (rows || []).forEach((r) => {
+                const truckLabel =
+                    r.trucks?.truck_number != null
+                        ? String(r.trucks.truck_number)
+                        : `ID ${r.truck_id}`;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHTML(truckLabel)}</td>
+                    <td>${escapeHTML(String(r.reminder_type ?? '—'))}</td>
+                    <td>${escapeHTML(String(r.target_value ?? '—'))}</td>
+                    <td>${escapeHTML(String(r.notes ?? '—'))}</td>
+                    <td>
+                        <button type="button" class="driver-btn driver-btn-toggle" onclick="resolveFleetReminder(${Number(r.id)})">Mark Resolved</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error('Error fetching reminders:', error.message);
+        }
+    }
+
+    function parseReminderTargetDate(raw) {
+        const t = String(raw ?? '').trim();
+        if (!t) return null;
+        const isoDay = t.match(/^(\d{4}-\d{2}-\d{2})/);
+        const d = isoDay
+            ? new Date(`${isoDay[1]}T12:00:00`)
+            : new Date(t);
+        if (Number.isNaN(d.getTime())) return null;
+        return d;
+    }
+
+    async function checkDueReminders() {
+        const banner = document.getElementById('reminderAlertBanner');
+        if (!banner || !supabase) return;
+
+        try {
+            const { data: reminders, error } = await supabase
+                .from('fleet_reminders')
+                .select('id, truck_id, reminder_type, target_value, notes, trucks(truck_number)')
+                .eq('is_resolved', false);
+
+            if (error) throw error;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const lines = [];
+            (reminders || []).forEach((r) => {
+                if (r.reminder_type !== 'Date-Based') return;
+                const targetD = parseReminderTargetDate(r.target_value);
+                if (!targetD) return;
+                targetD.setHours(0, 0, 0, 0);
+                if (targetD <= today) {
+                    const tn =
+                        r.trucks?.truck_number != null
+                            ? escapeHTML(String(r.trucks.truck_number))
+                            : `ID ${escapeHTML(String(r.truck_id))}`;
+                    const notes = escapeHTML(
+                        String(r.notes ?? '').trim() || 'Reminder due'
+                    );
+                    lines.push(
+                        `⚠️ ACTION REQUIRED: Truck ${tn} — ${notes}!`
+                    );
+                }
+            });
+
+            if (lines.length === 0) {
+                banner.innerHTML = '';
+                return;
+            }
+
+            banner.innerHTML = `<div class="reminder-alert-strip">${lines
+                .map((msg) => `<p>${msg}</p>`)
+                .join('')}</div>`;
+        } catch (error) {
+            console.error('checkDueReminders:', error.message);
+        }
+    }
+
+    window.resolveFleetReminder = async function (reminderId) {
+        const client = window.supabaseClient || window.createSupabaseClient?.();
+        if (!client) {
+            alert('Supabase client not available.');
+            return;
+        }
+        try {
+            const { error } = await client
+                .from('fleet_reminders')
+                .update({ is_resolved: true })
+                .eq('id', reminderId);
+            if (error) throw error;
+            await fetchReminders();
+            await checkDueReminders();
+        } catch (error) {
+            console.error('resolveFleetReminder:', error);
+            alert(error?.message || 'Failed to resolve reminder.');
+        }
+    };
+
     function formatProfitMoney(n) {
         if (!Number.isFinite(n)) return '—';
         return n.toLocaleString(undefined, {
@@ -378,6 +614,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                     expenseMargin = (totalExpenses / log.revenue) * 100;
                 }
 
+                const tripDay = log.trip_date
+                    ? new Date(`${log.trip_date}T12:00:00`)
+                    : new Date();
+                tripDay.setHours(0, 0, 0, 0);
+                let endDay;
+                if (log.is_paid === true && log.payment_date) {
+                    endDay = new Date(log.payment_date);
+                } else {
+                    endDay = new Date();
+                }
+                endDay.setHours(0, 0, 0, 0);
+                const daysOutstanding = Math.max(
+                    0,
+                    Math.floor((endDay - tripDay) / (1000 * 60 * 60 * 24))
+                );
+
+                const waybillDisplay = log.waybill_number
+                    ? escapeHTML(String(log.waybill_number))
+                    : '-';
+                const isPaid = log.is_paid === true;
+                const paymentCell = isPaid
+                    ? '<span style="display:inline-block;background:#10b981;color:#fff;padding:4px 8px;border-radius:4px;font-size:0.8em;font-weight:600;">Paid</span>'
+                    : `<button type="button" class="pay-btn" onclick="markWaybillPaid(${log.id})" style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer;">Mark Paid</button>`;
+                const durationCell = isPaid
+                    ? `<span style="color:#10b981;font-weight:600;">${daysOutstanding} Days</span>`
+                    : daysOutstanding > 14
+                      ? `<span style="color:#ef4444;font-weight:600;">Pending: ${daysOutstanding} Days</span>`
+                      : `<span style="color:#f59e0b;font-weight:600;">Pending: ${daysOutstanding} Days</span>`;
+
                 // Create the row
                 const row = document.createElement('tr');
 
@@ -390,6 +655,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${log.start_location}</td>
                 <td>${log.end_location}</td>
                 <td>${distanceKm.toFixed(2)} km</td>
+                <td>${waybillDisplay}</td>
+                <td>${paymentCell}</td>
+                <td>${durationCell}</td>
                 <td>GH₵${log.revenue.toFixed(2)}</td>
                 <td style="${fuelEfficiency !== null && fuelEfficiency < 2.5 ? 'color: #ef4444;' : ''}">${fuelEfficiency !== null ? `${fuelEfficiency.toFixed(2)} Km/L` : '—'}</td>
                 <td>${expectedFuel.toFixed(2)} L</td>
@@ -785,14 +1053,103 @@ document.addEventListener('DOMContentLoaded', async () => {
         return null;
     }
 
+    window.__ssvFinancialReportTimeframe = 'all';
+
+    function csvQuoteString(value) {
+        const s = value === null || value === undefined ? '' : String(value);
+        return `"${s.replace(/"/g, '""')}"`;
+    }
+
+    async function exportFinancialsToCSV() {
+        if (!supabase) {
+            alert('Supabase client not available.');
+            return;
+        }
+        const timeframe = window.__ssvFinancialReportTimeframe ?? 'all';
+        const startDate = getFinancialStartDate(timeframe);
+        let query = supabase
+            .from('trip_financials')
+            .select(
+                'trip_date, truck_id, start_location, end_location, distance_km, revenue, fuel_litres, fuel_rate, other_expenses, waybill_number, is_paid'
+            )
+            .order('trip_date', { ascending: true });
+
+        if (startDate) {
+            query = query.gte('trip_date', startDate.toISOString());
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            console.error('exportFinancialsToCSV:', error);
+            alert(error.message || 'Failed to fetch data for export.');
+            return;
+        }
+
+        const headers = [
+            'Trip Date',
+            'Truck ID',
+            'Start Location',
+            'End Location',
+            'Distance (km)',
+            'Revenue (GHS)',
+            'Fuel Cost (GHS)',
+            'Other Expenses (GHS)',
+            'Net Profit (GHS)',
+            'Waybill',
+            'Paid Status',
+        ];
+
+        const rowsOut = [headers.join(',')];
+
+        (data || []).forEach((row) => {
+            const fuelCost =
+                (Number(row.fuel_litres) || 0) * (Number(row.fuel_rate) || 0);
+            const otherExp = Number(row.other_expenses) || 0;
+            const revenue = Number(row.revenue) || 0;
+            const netProfit = revenue - fuelCost - otherExp;
+            const tripDateStr = row.trip_date != null ? String(row.trip_date) : '';
+            const paidStatus = row.is_paid === true ? 'Paid' : 'Unpaid';
+            const distanceKm = Number(row.distance_km) || 0;
+
+            rowsOut.push(
+                [
+                    csvQuoteString(tripDateStr),
+                    String(Number(row.truck_id) || ''),
+                    csvQuoteString(row.start_location ?? ''),
+                    csvQuoteString(row.end_location ?? ''),
+                    String(distanceKm),
+                    (Number.isFinite(revenue) ? revenue : 0).toFixed(2),
+                    (Number.isFinite(fuelCost) ? fuelCost : 0).toFixed(2),
+                    (Number.isFinite(otherExp) ? otherExp : 0).toFixed(2),
+                    (Number.isFinite(netProfit) ? netProfit : 0).toFixed(2),
+                    csvQuoteString(row.waybill_number ?? ''),
+                    csvQuoteString(paidStatus),
+                ].join(',')
+            );
+        });
+
+        const csvContent = rowsOut.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'SSV_Fleet_Report.csv');
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+
     window.loadFinancialReports = async function (timeframe = 'all') {
+        window.__ssvFinancialReportTimeframe = timeframe;
+        setActiveFinancialFilter(timeframe);
+
         const trendCanvas = document.getElementById('profitTrendChart');
         const revExpCanvas = document.getElementById('revenueExpenseChart');
         const truckCanvas = document.getElementById('truckComparisonChart');
         if (!trendCanvas || !revExpCanvas || !truckCanvas || !supabase) return;
         if (typeof Chart === 'undefined') return;
-
-        setActiveFinancialFilter(timeframe);
 
         try {
             const startDate = getFinancialStartDate(timeframe);
@@ -1066,12 +1423,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         addDriverForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const name = document.getElementById('driverName').value;
-            const contact = document.getElementById('driverContact').value;
-            const license = document.getElementById('driverLicense').value;
+            const name = document.getElementById('driverName')?.value?.trim() ?? '';
+            const license = document.getElementById('driverLicense')?.value?.trim() ?? '';
+            const expiry = document.getElementById('driverExpiry')?.value ?? '';
+            const truckId = document.getElementById('driverTruckSelect')?.value ?? '';
 
             const submitBtn = addDriverForm.querySelector('button[type="submit"]');
-            submitBtn.innerText = 'Adding...';
+            const prevBtnLabel = submitBtn?.innerText ?? 'Add Driver';
+            if (submitBtn) submitBtn.innerText = 'Adding...';
 
             try {
                 const {
@@ -1082,24 +1441,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                     throw new Error('Authentication missing. Please log out and log back in.');
                 }
 
-                const { error } = await supabase.from('drivers').insert([
-                    {
-                        full_name: name,
-                        contact_number: contact,
-                        license_number: license,
-                    },
-                ]);
+                if (!name || !license || !expiry) {
+                    throw new Error('Please fill in name, license number, and expiry date.');
+                }
+
+                const insertRow = {
+                    full_name: name,
+                    license_number: license,
+                    license_expiry: expiry,
+                    assigned_truck_id: truckId ? Number(truckId) : null,
+                    status: 'Active',
+                };
+
+                const { error } = await supabase.from('drivers').insert([insertRow]);
 
                 if (error) throw error;
 
+                alert('Driver added successfully!');
                 addDriverForm.reset();
-                fetchDrivers();
+                await fetchDriverRoster();
+                await populateDriverDropdown();
                 await loadOverviewStats();
             } catch (error) {
                 console.error('Error inserting driver:', error.message);
                 alert(`Failed to add driver: ${error.message}`);
             } finally {
-                submitBtn.innerText = 'Submit';
+                if (submitBtn) submitBtn.innerText = prevBtnLabel;
             }
         });
     }
@@ -1455,6 +1822,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const truckId = document.getElementById('profTruckSelect')?.value;
             const tripDate = document.getElementById('profTripDate')?.value;
+            const waybillNumber =
+                document.getElementById('profWaybill')?.value?.trim() ?? '';
             const startLoc =
                 document.getElementById('profStartLoc')?.value?.trim() ?? '';
             const endLoc =
@@ -1522,6 +1891,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             fuel_litres: fuelLitres,
                             fuel_rate: fuelRatePerLitre,
                             other_expenses: otherExpenses,
+                            waybill_number: waybillNumber || null,
+                            is_paid: false,
                         },
                     ]);
 
@@ -1570,10 +1941,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if (searchDriversInput && driverTableBody) {
+    const reminderForm = document.getElementById('reminderForm');
+    if (reminderForm && supabase) {
+        reminderForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const truckId = document.getElementById('remindTruckSelect')?.value;
+            const reminderType = document.getElementById('remindType')?.value ?? 'Date-Based';
+            const targetValue =
+                document.getElementById('remindValue')?.value?.trim() ?? '';
+            const email = document.getElementById('remindEmail')?.value?.trim() ?? '';
+            const notes = document.getElementById('remindNotes')?.value?.trim() ?? '';
+
+            try {
+                const {
+                    data: { session },
+                    error: sessionError,
+                } = await supabase.auth.getSession();
+                if (!session || sessionError) {
+                    throw new Error(
+                        'Authentication missing. Please log out and log back in.'
+                    );
+                }
+
+                if (!truckId) {
+                    throw new Error('Please select a truck.');
+                }
+                if (!targetValue) {
+                    throw new Error('Please enter a target value.');
+                }
+                if (!email) {
+                    throw new Error('Please enter an email address.');
+                }
+
+                const { error } = await supabase.from('fleet_reminders').insert([
+                    {
+                        truck_id: Number(truckId),
+                        reminder_type: reminderType,
+                        target_value: targetValue,
+                        email,
+                        notes,
+                        is_resolved: false,
+                    },
+                ]);
+
+                if (error) throw error;
+
+                alert('Reminder saved.');
+                reminderForm.reset();
+                await fetchReminders();
+                await checkDueReminders();
+            } catch (error) {
+                console.error('Reminder save error:', error);
+                alert(error.message || 'Failed to save reminder.');
+            }
+        });
+    }
+
+    if (searchDriversInput && driverRosterBody) {
         searchDriversInput.addEventListener('input', () => {
             const searchValue = searchDriversInput.value.toLowerCase();
-            const rows = driverTableBody.querySelectorAll('tr');
+            const rows = driverRosterBody.querySelectorAll('tr');
             rows.forEach((row) => {
                 const rowText = row.textContent.toLowerCase();
                 row.style.display = rowText.includes(searchValue) ? '' : 'none';
@@ -1611,8 +2039,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.loadFinancialReports?.('all');
     });
 
+    document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
+        void exportFinancialsToCSV();
+    });
+
     fetchDrivers();
     fetchTrucks();
+    void populateRemindTruckSelect();
     populateDriverDropdown();
     populateTruckDropdown();
     updateLiveFleetStatus();
@@ -1623,6 +2056,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.fetchProfitabilityLogs();
     window.loadFinancialReports('all');
     window.loadExecutiveOverview();
+
+    await fetchReminders();
+    await checkDueReminders();
 
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {

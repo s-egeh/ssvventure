@@ -194,6 +194,48 @@ body.dashboard-body {
     animation: fadeIn 0.3s;
 }
 
+.reminder-alert-banner-host {
+    padding: var(--space-2) var(--space-2) 0;
+    max-width: 1200px;
+}
+
+.reminder-alert-strip {
+    background: #dc2626;
+    color: #fef2f2;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: 1px solid #f87171;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.35);
+    margin-bottom: var(--space-2);
+}
+
+.reminder-alert-strip p {
+    margin: 0.35em 0 0;
+}
+
+.reminder-alert-strip p:first-child {
+    margin-top: 0;
+}
+
+.reminders-portal-wrap {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    padding: var(--space-2);
+    max-width: 1200px;
+}
+
+.reminders-form-card,
+.reminders-roster-card {
+    min-width: 0;
+}
+
+.reminders-table {
+    width: 100%;
+}
+
 .overview-inner {
     padding: var(--space-2);
 }
@@ -396,12 +438,37 @@ body.dashboard-body {
     padding: var(--space-2);
 }
 
+.driver-portal-wrap {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    padding: var(--space-2);
+    max-width: 1200px;
+}
+
+.driver-portal-roster-card {
+    min-width: 0;
+}
+
+.driver-roster-table {
+    width: 100%;
+}
+
 .driver-card {
     background: rgba(30, 41, 59, 0.9);
     border: 1px solid #334155;
     border-radius: var(--radius-card);
     padding: var(--space-2);
     box-shadow: 0 12px 28px rgba(2, 6, 23, 0.35);
+}
+
+.driver-card.driver-portal-form-card,
+.driver-card.driver-portal-roster-card {
+    background: #1e293b;
+    border-radius: 12px;
+    box-shadow:
+        0 12px 28px rgba(2, 6, 23, 0.35),
+        inset 0 1px 0 rgba(148, 163, 184, 0.06);
 }
 
 .driver-card h3 {
@@ -764,7 +831,9 @@ body.dashboard-body {
 .time-filter-bar {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
+    width: 100%;
 }
 
 .time-filter-btn {
@@ -835,6 +904,14 @@ body.dashboard-body {
     }
 
     .driver-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .driver-portal-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .reminders-portal-wrap {
         grid-template-columns: 1fr;
     }
 

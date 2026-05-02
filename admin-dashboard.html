@@ -21,7 +21,7 @@
                 <i class="fa-solid fa-chart-line"></i>
                 <span>Overview</span>
             </li>
-            <li class="nav-item" data-target="driver-section">
+            <li class="nav-item" data-target="driver-management-section">
                 <i class="fa-solid fa-users"></i>
                 <span>Driver Management</span>
             </li>
@@ -44,6 +44,10 @@
             <li class="nav-item" data-target="financial-reports-section">
                 <i class="fa-solid fa-chart-pie"></i>
                 <span>Financial Reports</span>
+            </li>
+            <li class="nav-item" data-target="reminders-section">
+                <i class="fa-solid fa-bell"></i>
+                <span>Reminders</span>
             </li>
         </ul>
 
@@ -68,6 +72,7 @@
         </header>
 
         <section id="overview-section" class="content-section active">
+            <div id="reminderAlertBanner" class="reminder-alert-banner-host" aria-live="polite"></div>
             <div class="overview-inner executive-overview-wrap">
                 <div class="executive-kpi-grid">
                     <article class="kpi-card executive-kpi-card">
@@ -96,32 +101,50 @@
                 </article>
             </div>
         </section>
-        <section id="driver-section" class="content-section">
-            <div class="driver-grid">
-                <article class="driver-card">
-                    <h3>Onboard New Driver</h3>
+        <section id="driver-management-section" class="content-section">
+            <div class="driver-portal-wrap">
+                <article
+                    class="driver-card driver-portal-form-card"
+                    style="background: #1e293b; padding: 20px; border-radius: 12px;"
+                >
+                    <h3>Add new driver</h3>
                     <form id="addDriverForm" class="driver-form">
-                        <input type="text" id="driverName" placeholder="Full Name" required>
-                        <input type="text" id="driverContact" placeholder="Contact Number" required>
-                        <input type="text" id="driverLicense" placeholder="License Number" required>
-                        <button type="submit">Submit</button>
+                        <label for="driverName">Full name</label>
+                        <input type="text" id="driverName" placeholder="Full name" required>
+
+                        <label for="driverLicense">License number</label>
+                        <input type="text" id="driverLicense" placeholder="License number" required>
+
+                        <label for="driverExpiry">License expiry date</label>
+                        <input type="date" id="driverExpiry" required>
+
+                        <label for="driverTruckSelect">Assigned truck</label>
+                        <select id="driverTruckSelect">
+                            <option value="">Optional — select truck</option>
+                        </select>
+
+                        <button type="submit">Add Driver</button>
                     </form>
                 </article>
 
-                <article class="driver-card">
-                    <h3>Active Drivers</h3>
-                    <input type="text" id="searchDrivers" placeholder="Search drivers by name..." class="search-input">
+                <article
+                    class="driver-card driver-portal-roster-card"
+                    style="background: #1e293b; padding: 20px; border-radius: 12px;"
+                >
+                    <h3>Driver roster</h3>
+                    <input type="text" id="searchDrivers" placeholder="Search by name..." class="search-input">
                     <div class="table-wrap">
-                        <table class="driver-table">
+                        <table class="driver-table driver-roster-table">
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Contact</th>
+                                    <th>License #</th>
+                                    <th>Expiry Date</th>
+                                    <th>Assigned Truck</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="driverTableBody"></tbody>
+                            <tbody id="driverRosterBody"></tbody>
                         </table>
                     </div>
                 </article>
@@ -307,6 +330,9 @@
                         <label for="profTripDate">Date of trip</label>
                         <input type="date" id="profTripDate" required>
 
+                        <label for="profWaybill">Waybill Number</label>
+                        <input type="text" id="profWaybill" placeholder="e.g., WB-10452">
+
                         <label for="profStartLoc">Start location</label>
                         <input type="text" id="profStartLoc" placeholder="e.g. Johannesburg depot" required>
 
@@ -368,6 +394,9 @@
                                     <th>START</th>
                                     <th>END</th>
                                     <th>DISTANCE</th>
+                                    <th>WAYBILL</th>
+                                    <th>PAYMENT STATUS</th>
+                                    <th>DURATION</th>
                                     <th>REVENUE</th>
                                     <th>EFFICIENCY (Km/L)</th>
                                     <th>EXPECTED FUEL</th>
@@ -394,6 +423,14 @@
                         <button id="btn-filter-month" class="time-filter-btn" type="button">1 Month</button>
                         <button id="btn-filter-3months" class="time-filter-btn" type="button">3 Months</button>
                         <button id="btn-filter-all" class="time-filter-btn active" type="button">All Time</button>
+                        <button
+                            id="exportCsvBtn"
+                            class="export-btn"
+                            type="button"
+                            style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-left: auto; font-weight: bold;"
+                        >
+                            📥 Export to CSV
+                        </button>
                     </div>
                 </article>
 
@@ -421,12 +458,61 @@
                 </div>
             </div>
         </section>
+
+        <section id="reminders-section" class="content-section">
+            <div class="reminders-portal-wrap">
+                <article class="driver-card reminders-form-card">
+                    <h3>Set fleet reminder</h3>
+                    <form id="reminderForm" class="driver-form">
+                        <label for="remindTruckSelect">Select truck</label>
+                        <select id="remindTruckSelect" required>
+                            <option value="">Select truck</option>
+                        </select>
+
+                        <label for="remindType">Reminder type</label>
+                        <select id="remindType" required>
+                            <option value="Date-Based">Date-Based</option>
+                            <option value="Mileage-Based">Mileage-Based</option>
+                        </select>
+
+                        <label for="remindValue">Target value</label>
+                        <input type="text" id="remindValue" placeholder="e.g., 2026-05-15 or 50000" required>
+
+                        <label for="remindEmail">Email address</label>
+                        <input type="email" id="remindEmail" placeholder="you@example.com" required>
+
+                        <label for="remindNotes">Reminder notes</label>
+                        <input type="text" id="remindNotes" placeholder="e.g., Oil Change Due" required>
+
+                        <button type="submit">Set Reminder</button>
+                    </form>
+                </article>
+
+                <article class="driver-card reminders-roster-card">
+                    <h3>Active reminders</h3>
+                    <div class="table-wrap">
+                        <table class="driver-table reminders-table">
+                            <thead>
+                                <tr>
+                                    <th>Truck</th>
+                                    <th>Type</th>
+                                    <th>Target</th>
+                                    <th>Notes</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeRemindersBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <!-- Replace YOUR_API_KEY with a key that has Distance Matrix API enabled (HTTP referrer restrictions recommended). -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&amp;libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkeQCIdJVaSW38nHYOzgVVsYbeTTkFI3M&amp;libraries=places"></script>
     <script src="admin-dashboard.js"></script>
 </body>
 </html>
